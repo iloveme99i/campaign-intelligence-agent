@@ -23,6 +23,21 @@ function usage(input: number, output: number) {
 // ─── Simple Q&A (no tools) ───────────────────────────────────────────────────
 
 describe("simple Q&A turn", () => {
+  it("renders a durable COMPLETE answer without persisted token chunks", () => {
+    const records: MessageRecord[] = [
+      rec({
+        role: "assistant",
+        event_type: "COMPLETE",
+        payload: { text: "完整决策记录" },
+      }),
+    ];
+
+    const { messages } = buildUiMessages(records);
+
+    expect(messages).toHaveLength(1);
+    expect((messages[0].payload as { text: string }).text).toBe("完整决策记录");
+  });
+
   it("merges streaming TEXT chunks into a single bubble", () => {
     const records: MessageRecord[] = [
       rec({ role: "user", event_type: "TEXT", payload: { text: "Hello" } }),
@@ -49,6 +64,29 @@ describe("simple Q&A turn", () => {
 
     const { messages } = buildUiMessages(records);
     expect((messages[1].payload as { text: string }).text).toBe("Final answer.");
+  });
+
+  it("a quality retry replaces the original answer and keeps aggregate usage", () => {
+    const records: MessageRecord[] = [
+      rec({ role: "user", event_type: "TEXT", payload: { text: "Q" } }),
+      rec({ role: "assistant", event_type: "TEXT", payload: { text: "Draft" } }),
+      rec({ role: "assistant", event_type: "USAGE", payload: usage(100, 10) as never }),
+      rec({ role: "assistant", event_type: "COMPLETE", payload: { text: "Draft" } }),
+      rec({ role: "assistant", event_type: "USAGE", payload: usage(50, 5) as never }),
+      rec({
+        role: "assistant",
+        event_type: "COMPLETE",
+        payload: { text: "Evidence-bound answer", quality_retry: true },
+      }),
+      rec({ role: "assistant", event_type: "QUALITY_RETRY", payload: { status: "accepted" } }),
+    ];
+
+    const { messages } = buildUiMessages(records);
+    const answers = messages.filter((message) => message.role === "assistant" && message.event_type === "TEXT");
+    expect(answers).toHaveLength(1);
+    expect(answers[0].payload.text).toBe("Evidence-bound answer");
+    expect(answers[0].turnUsage?.total_tokens).toBe(165);
+    expect(answers[0].turnUsage?.calls).toBe(2);
   });
 
   it("falls back to merged chunks when COMPLETE text is empty", () => {
@@ -120,7 +158,7 @@ describe("tool-calling turn", () => {
     expect((finalMsg!.payload as { text: string }).text).toBe("Here you go.");
   });
 
-  it("attaches USAGE to the previous TOOL_CALL in result", () => {
+  it("attaches model-end USAGE to the following tool call, not the previous result", () => {
     const u = usage(8000, 60);
     const records: MessageRecord[] = [
       rec({ role: "user", event_type: "TEXT", payload: { text: "Q" } }),
@@ -135,7 +173,9 @@ describe("tool-calling turn", () => {
 
     const { messages } = buildUiMessages(records);
     const tc1 = messages.find((m) => m.event_type === "TOOL_CALL" && (m.payload as { tool_name: string }).tool_name === "t1");
-    expect(tc1!.usage).toEqual(expect.objectContaining({ input_tokens: 8000 }));
+    const tc2 = messages.find((m) => m.event_type === "TOOL_CALL" && (m.payload as { tool_name: string }).tool_name === "t2");
+    expect(tc1!.usage).toBeUndefined();
+    expect(tc2!.usage).toEqual(expect.objectContaining({ input_tokens: 8000 }));
   });
 
   it("emits SQL and CHART messages directly (no merging)", () => {

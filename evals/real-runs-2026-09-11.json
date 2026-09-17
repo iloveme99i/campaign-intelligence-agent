@@ -1,0 +1,151 @@
+{
+  "date": "2026-09-11",
+  "provider": "DeepSeek official API",
+  "configured_model": "deepseek-v4-flash",
+  "mode": "non-thinking tool mode",
+  "dataset": "synthetic merchant example",
+  "summary": {
+    "runs": 10,
+    "passed": 6,
+    "failed": 4,
+    "claim_boundary": "Development evidence only. This is not a stable pass-rate estimate."
+  },
+  "runs": [
+    {
+      "case": "full_campaign_review",
+      "conversation_id": "27afc2bf-9cf6-49de-807a-12f9e3ea61d8",
+      "prompt_revision": 1,
+      "checks_passed": 14,
+      "checks_total": 14,
+      "elapsed_seconds": 8.287,
+      "input_tokens": 5235,
+      "output_tokens": 1311,
+      "total_tokens": 6546
+    },
+    {
+      "case": "variant_tradeoff",
+      "conversation_id": "1e86e600-cf56-4ef8-8da9-f2fc61823c88",
+      "prompt_revision": 1,
+      "checks_passed": 12,
+      "checks_total": 14,
+      "elapsed_seconds": 7.82,
+      "input_tokens": 5207,
+      "output_tokens": 1072,
+      "total_tokens": 6279,
+      "failed_checks": ["numeric_facts_cited", "target_cost_tension"],
+      "disposition": "Prompt contract strengthened; failure retained as regression evidence."
+    },
+    {
+      "case": "variant_tradeoff",
+      "conversation_id": "701e4c9b-dfdd-4d8d-9f17-c50d6dffbc4b",
+      "prompt_revision": 2,
+      "checks_passed": 14,
+      "checks_total": 14,
+      "elapsed_seconds": 8.871,
+      "input_tokens": 5311,
+      "output_tokens": 1381,
+      "total_tokens": 6692
+    },
+    {
+      "case": "adaptive_cost_diagnosis",
+      "conversation_id": "f7c14149-55d2-46ee-8d93-d4035c39c876",
+      "prompt_revision": 3,
+      "checks_passed": 21,
+      "checks_total": 21,
+      "elapsed_seconds": 10.995,
+      "input_tokens": 11164,
+      "output_tokens": 1626,
+      "total_tokens": 12790,
+      "manual_review": "failed",
+      "failure": "Variant diagnostic rows used dimension_value while the experiment evaluator expected variant, producing an incorrect insufficient_groups status.",
+      "disposition": "Adapter corrected and a semantic regression test added; failure retained even though the then-current automated gates passed."
+    },
+    {
+      "case": "adaptive_constraint_driven_diagnosis",
+      "conversation_id": "857db2fa-2996-48be-bbc4-235d4557a372",
+      "prompt_revision": 4,
+      "checks_passed": 21,
+      "checks_total": 21,
+      "elapsed_seconds": 10.061,
+      "input_tokens": 10933,
+      "output_tokens": 1484,
+      "total_tokens": 12417,
+      "diagnostic_dimension": "location_id",
+      "diagnostic_reason": "The merchant explicitly reported stockouts, so the agent selected location diagnosis instead of mechanically following the default variant drill-down."
+    },
+    {
+      "case": "decision_level_citation_and_causality",
+      "conversation_id": "1217a5e2-5961-406f-8d4d-c4a9f4eb76fa",
+      "prompt_revision": 5,
+      "checks_passed": 22,
+      "checks_total": 23,
+      "elapsed_seconds": 11.587,
+      "input_tokens": 11054,
+      "output_tokens": 1956,
+      "total_tokens": 13010,
+      "failed_checks": ["no_unsupported_causal_claim"],
+      "failure": "The answer stated the causal boundary but later claimed merchant-funded discount had not brought incremental orders.",
+      "disposition": "Causal-verb consistency gate added across conclusion, facts, and action rationale."
+    },
+    {
+      "case": "decision_grade_adaptive_diagnosis",
+      "conversation_id": "96c39f14-366a-4794-a841-7207dcf2292d",
+      "prompt_revision": 6,
+      "checks_passed": 23,
+      "checks_total": 23,
+      "elapsed_seconds": 9.708,
+      "input_tokens": 11156,
+      "output_tokens": 1233,
+      "total_tokens": 12389,
+      "diagnostic_dimension": "location_id",
+      "result": "Passed task alignment, selective diagnosis, scope consistency, evidence coverage, conclusion citation, action contract, and causal-language gates."
+    },
+    {
+      "case": "diagnostic_evidence_and_forecast_boundary",
+      "conversation_id": "c5632c05-bac5-4419-b9d8-814acc9a675c",
+      "prompt_revision": 7,
+      "checks_passed": 22,
+      "checks_total": 25,
+      "elapsed_seconds": 9.72,
+      "input_tokens": 11556,
+      "output_tokens": 1575,
+      "total_tokens": 13131,
+      "failed_checks": [
+        "numeric_conclusion_cited",
+        "no_unqualified_forecast",
+        "diagnosis_supports_conclusion"
+      ],
+      "failure": "The conclusion omitted a citation for a diagnostic claim and used an unqualified forecast in a decision-bearing section.",
+      "disposition": "Conclusion-level diagnostic citation and forecast-language requirements were strengthened; failure retained as regression evidence."
+    },
+    {
+      "case": "cross_industry_variant_scale_decision",
+      "conversation_id": "7fb676ad-9d2a-4765-93f4-1217b077d074",
+      "prompt_revision": 8,
+      "checks_passed": 25,
+      "checks_total": 25,
+      "elapsed_seconds": 12.657,
+      "input_tokens": 11766,
+      "output_tokens": 1669,
+      "total_tokens": 13435,
+      "diagnostic_dimension": "variant",
+      "scenario": "字节系 · 全域大促（公开机制原型，数据完全合成）",
+      "result": "Passed all gates. The answer preserved target-versus-contribution tension, rejected direct scale-up, cited variant diagnostics in the conclusion, respected the 15% budget constraint, and separated observational evidence from causal claims."
+    },
+    {
+      "case": "cross_industry_game_path_decision",
+      "conversation_id": "73124a25-1763-4959-9464-f41e828d95a8",
+      "prompt_revision": 8,
+      "checks_passed": 25,
+      "checks_total": 25,
+      "elapsed_seconds": 9.648,
+      "input_tokens": 11796,
+      "output_tokens": 1307,
+      "total_tokens": 13103,
+      "diagnostic_dimension": "variant",
+      "scenario": "腾讯游戏 · 回流任务季（公开机制原型，数据完全合成）",
+      "persisted_events": 8,
+      "result": "Passed all gates. The answer located the claim-to-activation loss, kept the randomized-assignment caveat, recommended reallocating rather than increasing reward budget, and defined measurable continuation and stop conditions. The post-stream persistence design retained one durable answer instead of token-level message rows."
+    }
+  ]
+}

@@ -10,8 +10,10 @@ from __future__ import annotations
 
 import importlib.metadata
 import os
+import tomllib
+from pathlib import Path
 
-PACKAGE_NAME = "datahub-analytics-agent"
+PACKAGE_NAME = "campaign-intelligence"
 
 
 def get_package_version() -> str:
@@ -21,12 +23,17 @@ def get_package_version() -> str:
 
     1. ``ANALYTICS_AGENT_OVERRIDE_VERSION`` env var (used by dev/CI builds).
     2. ``importlib.metadata.version`` for the installed distribution.
-    3. ``"unknown"`` if the package is not installed (e.g. running from a
-       source checkout without an editable install).
+    3. Local ``pyproject.toml`` when running from a source checkout.
+    4. ``"unknown"`` when neither package metadata nor project metadata exists.
     """
     try:
         return os.environ.get("ANALYTICS_AGENT_OVERRIDE_VERSION") or importlib.metadata.version(
             PACKAGE_NAME
         )
     except Exception:
-        return "unknown"
+        try:
+            project_file = Path(__file__).parents[3] / "pyproject.toml"
+            with project_file.open("rb") as handle:
+                return str(tomllib.load(handle)["project"]["version"])
+        except (OSError, KeyError, TypeError, tomllib.TOMLDecodeError):
+            return "unknown"

@@ -66,9 +66,10 @@ export function buildUiMessages(records: MessageRecord[]): {
   };
 
   for (const m of records) {
-    if (m.role === "user") {
+    if (m.role === "user" && m.event_type === "TEXT") {
       flushText(seenToolCallAfterText);
       turnUsages = [];
+      pendingUsage = null;
       result.push({ id: m.id, event_type: m.event_type, role: "user", payload: m.payload, created_at: m.created_at });
       continue;
     }
@@ -80,7 +81,42 @@ export function buildUiMessages(records: MessageRecord[]): {
 
       case "COMPLETE":
         completeText = (m.payload.text as string) || "";
-        flushText(false);
+        if (m.payload.quality_retry === true && completeText.trim()) {
+          // A server-side quality pass may replace the first answer once. Keep
+          // one canonical response in the turn instead of showing two bubbles.
+          flushText(false);
+          let priorFinal = -1;
+          for (let index = result.length - 1; index >= 0; index -= 1) {
+            const item = result[index];
+            if (item.role === "user") break;
+            if (item.role === "assistant" && item.event_type === "TEXT" && !item.isThinking) {
+              priorFinal = index;
+              break;
+            }
+          }
+          if (priorFinal >= 0) {
+            result[priorFinal] = {
+              ...result[priorFinal],
+              id: m.id,
+              payload: { text: completeText, quality_retry: true },
+              created_at: m.created_at,
+            };
+          }
+          completeText = "";
+        } else if (pendingTextChunks.length > 0) {
+          flushText(false);
+        } else if (completeText.trim()) {
+          result.push({
+            id: m.id,
+            event_type: "TEXT",
+            role: "assistant",
+            payload: { text: completeText },
+            created_at: m.created_at,
+            ...(pendingUsage ? { usage: pendingUsage } : {}),
+          });
+          pendingUsage = null;
+          completeText = "";
+        }
         if (turnUsages.length > 0 && result.length > 0) {
           const last = result[result.length - 1];
           if (last.role === "assistant" && last.event_type === "TEXT" && !last.isThinking) {
@@ -98,7 +134,22 @@ export function buildUiMessages(records: MessageRecord[]): {
               if (u.model) tu.model = u.model;
               if (u.provider) tu.provider = u.provider;
             }
-            last.turnUsage = tu;
+            if (last.turnUsage) {
+              last.turnUsage = {
+                ...tu,
+                input_tokens: last.turnUsage.input_tokens + tu.input_tokens,
+                output_tokens: last.turnUsage.output_tokens + tu.output_tokens,
+                total_tokens: last.turnUsage.total_tokens + tu.total_tokens,
+                cache_read_tokens: last.turnUsage.cache_read_tokens + tu.cache_read_tokens,
+                cache_creation_tokens:
+                  last.turnUsage.cache_creation_tokens + tu.cache_creation_tokens,
+                calls: last.turnUsage.calls + tu.calls,
+                model: tu.model ?? last.turnUsage.model,
+                provider: tu.provider ?? last.turnUsage.provider,
+              };
+            } else {
+              last.turnUsage = tu;
+            }
           }
         }
         turnUsages = [];
@@ -107,14 +158,24 @@ export function buildUiMessages(records: MessageRecord[]): {
       case "TOOL_CALL":
         flushText(true);
         seenToolCallAfterText = true;
-        result.push({ id: m.id, event_type: "TOOL_CALL", role: "assistant", payload: m.payload, created_at: m.created_at });
+        result.push({ id: m.id, event_type: "TOOL_CALL", role: "assistant", payload: m.payload, created_at: m.created_at,
+          ...(pendingUsage ? { usage: pendingUsage } : {}),
+        });
+        pendingUsage = null;
         break;
 
       case "TOOL_RESULT":
       case "SQL":
       case "CHART":
       case "ERROR":
+      case "DECISION":
+      case "OUTCOME":
         result.push({ id: m.id, event_type: m.event_type, role: "assistant", payload: m.payload, created_at: m.created_at });
+        break;
+
+      case "QUALITY_RETRY":
+        // Kept in the durable trace for auditability. The user-facing trace
+        // audit presents the result; the chat transcript stays focused.
         break;
 
       case "USAGE": {
@@ -135,25 +196,9 @@ export function buildUiMessages(records: MessageRecord[]): {
           pendingUsage = u;
           break;
         }
-        // No pending text — this LLM call produced only tool calls. Walk back
-        // within the current call's slice (stop at TOOL_RESULT/SQL/CHART/ERROR)
-        // and attach to the most recent TOOL_CALL.
-        for (let j = result.length - 1; j >= 0; j--) {
-          const r = result[j];
-          if (r.role !== "assistant") continue;
-          if (r.event_type === "TOOL_CALL") {
-            r.usage = u;
-            break;
-          }
-          if (
-            r.event_type === "TOOL_RESULT" ||
-            r.event_type === "SQL" ||
-            r.event_type === "CHART" ||
-            r.event_type === "ERROR"
-          ) {
-            break;
-          }
-        }
+        // Model-end precedes tool-start. With no text, reserve this usage for
+        // the next tool call rather than assigning it to a previous query.
+        pendingUsage = u;
         break;
       }
 

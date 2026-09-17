@@ -1,0 +1,78 @@
+{
+  "run_type": "single_real_model_smoke",
+  "executed_at": "2026-09-16T13:35:42+09:00",
+  "model": "deepseek-flash",
+  "scenario": "腾讯零售 · 私域联动｜是否继续｜成本价值",
+  "provenance": "synthetic",
+  "conversation_id": "503b3542-018b-4613-9cfd-eef73b459680",
+  "snapshot_id": "dcbc6d13dea84b00949bf6c8f259c4902a8305e2e011bce10b5be6ff0f94c638",
+  "scope_id": "db77ce739246efedfc5a60315e3d78a35ccb2393c92e54ffd17ad21228a28302",
+  "quality": {
+    "status": "passed",
+    "passed": 39,
+    "total": 39,
+    "failed_checks": [],
+    "model_calls": 2,
+    "evidence_count": 15,
+    "input_tokens": 33453,
+    "output_tokens": 2138,
+    "total_tokens": 35591,
+    "elapsed_seconds": 10.706,
+    "quality_retry": null
+  },
+  "incrementality": {
+    "method": "balanced-panel difference-in-differences on unit-level pre/post changes",
+    "estimand": "average_treatment_effect_on_treated_units",
+    "estimand_unit": "panel_unit",
+    "effect_interpretation": "Mean post-period outcome minus mean pre-period outcome per treated operating unit, net of the same change among control units; not total campaign lift.",
+    "treated_units": 8,
+    "control_units": 8,
+    "pre_periods": 3,
+    "post_periods": 1,
+    "interference_reviewed": true,
+    "estimates": [
+      {
+        "metric": "completed_orders",
+        "att": 11.5,
+        "ci95": [10.500763876466062, 12.499236123533938],
+        "inference": "welch_t_small_sample",
+        "degrees_of_freedom": 7.0,
+        "parallel_trends_p": 1.0,
+        "placebo_p": 1.0,
+        "decision_ready": true
+      },
+      {
+        "metric": "buyer_users",
+        "att": 10.5,
+        "ci95": [9.500763876466062, 11.499236123533938],
+        "inference": "welch_t_small_sample",
+        "degrees_of_freedom": 7.0,
+        "parallel_trends_p": 1.0,
+        "placebo_p": 1.0,
+        "decision_ready": true
+      },
+      {
+        "metric": "net_revenue_cents",
+        "att": 92500.0,
+        "ci95": [87503.81938233032, 97496.18061766968],
+        "inference": "welch_t_small_sample",
+        "degrees_of_freedom": 7.0,
+        "parallel_trends_p": 1.0,
+        "placebo_p": 1.0,
+        "decision_ready": true
+      },
+      {
+        "metric": "contribution_cents",
+        "att": 61000.0,
+        "ci95": [57003.05550586425, 64996.94449413575],
+        "inference": "welch_t_small_sample",
+        "degrees_of_freedom": 7.0,
+        "parallel_trends_p": 1.0,
+        "placebo_p": 1.0,
+        "decision_ready": true
+      }
+    ]
+  },
+  "pretrend_power_note": "Only three pre-periods are available (trend-test df=1); failure to reject is low-power evidence, not proof of parallel trends.",
+  "claims_boundary": "This is one synthetic scenario and one model run. It does not establish production pass rate, external validity, or online business impact."
+}

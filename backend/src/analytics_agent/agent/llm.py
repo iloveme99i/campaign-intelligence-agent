@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from urllib.parse import urlparse
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from pydantic import SecretStr
@@ -13,6 +14,8 @@ from analytics_agent.config import settings
 def _make_anthropic(model: str, streaming: bool) -> BaseChatModel:
     from langchain_anthropic import ChatAnthropic
 
+    if not settings.anthropic_api_key:
+        raise ValueError("模型尚未配置，请先在“模型与设置”中保存并验证 API Key。")
     kwargs: dict = {"model_name": model, "streaming": streaming}
     if settings.anthropic_api_key:
         kwargs["api_key"] = SecretStr(settings.anthropic_api_key)
@@ -31,6 +34,8 @@ def _is_openai_reasoning_model(model: str) -> bool:
 def _make_openai(model: str, streaming: bool) -> BaseChatModel:
     from langchain_openai import ChatOpenAI
 
+    if not settings.openai_api_key:
+        raise ValueError("模型尚未配置，请先在“模型与设置”中保存并验证 API Key。")
     kwargs: dict = {"model": model, "temperature": 0, "streaming": streaming}
     if settings.openai_api_key:
         kwargs["api_key"] = SecretStr(settings.openai_api_key)
@@ -50,6 +55,8 @@ def _make_openai(model: str, streaming: bool) -> BaseChatModel:
 def _make_google(model: str, streaming: bool) -> BaseChatModel:
     from langchain_google_genai import ChatGoogleGenerativeAI
 
+    if not settings.google_api_key:
+        raise ValueError("模型尚未配置，请先在“模型与设置”中保存并验证 API Key。")
     kwargs: dict = {"model": model, "streaming": streaming}
     if settings.google_api_key:
         kwargs["google_api_key"] = SecretStr(settings.google_api_key)
@@ -77,6 +84,22 @@ def _api_key_from_headers(headers: dict) -> str:
     return auth_value[7:] if auth_value.startswith("Bearer ") else auth_value
 
 
+def _is_deepseek_v4_endpoint(model: str, url: str) -> bool:
+    """Detect the official DeepSeek V4 Chat Completions endpoint.
+
+    DeepSeek V4 enables thinking by default. Its tool-call protocol requires
+    every reasoning_content field to be replayed on later requests, while the
+    generic LangChain ChatOpenAI adapter currently drops that provider-specific
+    field. Explicit non-thinking mode keeps the supported tool-call path
+    deterministic instead of failing after the first tool result.
+    """
+    try:
+        hostname = (urlparse(url).hostname or "").lower()
+    except ValueError:
+        return False
+    return hostname == "api.deepseek.com" and model.lower().startswith("deepseek-v4-")
+
+
 def _build_openai_compatible(
     model: str,
     url: str,
@@ -99,6 +122,8 @@ def _build_openai_compatible(
     }
     if max_tokens is not None:
         kwargs["max_tokens"] = max_tokens
+    if _is_deepseek_v4_endpoint(model, url):
+        kwargs["extra_body"] = {"thinking": {"type": "disabled"}}
     if headers:
         kwargs["default_headers"] = {str(k): str(v) for k, v in headers.items()}
     return ChatOpenAI(**kwargs)
@@ -112,6 +137,8 @@ def _make_openai_compatible(model: str, streaming: bool) -> BaseChatModel:
         raise ValueError(
             "OPENAI_COMPATIBLE_BASE_URL is required for the openai-compatible provider"
         )
+    if not settings.openai_compatible_api_key and not settings.openai_compatible_headers:
+        raise ValueError("模型尚未配置，请先在“模型与设置”中保存并验证 API Key。")
 
     headers = {}
     if settings.openai_compatible_headers:

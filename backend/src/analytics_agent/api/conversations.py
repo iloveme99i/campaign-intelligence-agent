@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+import unicodedata
 import uuid
 from datetime import UTC, datetime
 
@@ -15,8 +17,57 @@ from analytics_agent.db.repository import ConversationRepo, MessageRepo
 router = APIRouter(prefix="/api/conversations", tags=["conversations"])
 
 
+_DECISION_LABELS = {
+    "continue": "继续判断",
+    "adjust": "调整判断",
+    "scale": "扩量判断",
+    "stop": "止损判断",
+}
+
+
+def _clean_title(raw: str, fallback: str) -> str:
+    """Turn untrusted model text into a stable, single-line record title."""
+    normalized = unicodedata.normalize("NFKC", raw or "")
+    normalized = normalized.splitlines()[0] if normalized else ""
+    normalized = "".join(
+        char for char in normalized if unicodedata.category(char) not in {"Cc", "Cf"}
+    )
+    normalized = re.sub(r"<[^>]*>", "", normalized)
+    normalized = re.sub(r"^(?:#+|[-*•]+)\s*", "", normalized.strip())
+    normalized = re.sub(r"^(?:title|标题|对话标题)\s*[:：]\s*", "", normalized, flags=re.IGNORECASE)
+    normalized = re.sub(r"\s+", " ", normalized)
+    normalized = normalized.strip(" `*_~#'\"“”‘’：:，,。.!！?？|｜-—")
+    normalized = normalized[:36].rstrip(" `*_~#'\"“”‘’：:，,。.!！?？|｜-—")
+
+    meaningful = sum(char.isalnum() or "\u3400" <= char <= "\u9fff" for char in normalized)
+    symbol_count = sum(
+        not (char.isalnum() or char.isspace() or "\u3400" <= char <= "\u9fff")
+        for char in normalized
+    )
+    if "�" in normalized or meaningful < 2 or symbol_count > max(4, len(normalized) // 3):
+        return fallback
+    return normalized or fallback
+
+
+def _merchant_title(messages: list) -> str | None:
+    """Build merchant record titles from the structured task, never from LLM prose."""
+    for message in messages:
+        if message.role != "user" or message.event_type != "TEXT":
+            continue
+        payload = orjson.loads(message.payload)
+        text = str(payload.get("text", ""))
+        campaign_match = re.search(r"复盘[「\"]([^」\"]{1,48})[」\"]", text)
+        task = payload.get("review_task")
+        if not campaign_match or not isinstance(task, dict):
+            continue
+        campaign = _clean_title(campaign_match.group(1), "活动")[:24]
+        decision = _DECISION_LABELS.get(str(task.get("decision_intent")), "经营判断")
+        return f"{campaign}｜{decision}"
+    return None
+
+
 class ConversationCreate(BaseModel):
-    title: str = "New Conversation"
+    title: str = "新复盘"
     engine_name: str
 
 
@@ -56,10 +107,16 @@ async def list_conversations(session: AsyncSession = Depends(get_session)):
     result = []
     for conv in conversations:
         msgs = await msg_repo.list_for_conversation(conv.id)
+        title = conv.title
+        if conv.engine_name.startswith("merchant_"):
+            structured_title = _merchant_title(msgs)
+            if structured_title and structured_title != title:
+                await repo.update_title(conv.id, structured_title)
+                title = structured_title
         result.append(
             ConversationSummary(
                 id=conv.id,
-                title=conv.title,
+                title=title,
                 engine_name=conv.engine_name,
                 created_at=conv.created_at,
                 updated_at=conv.updated_at,
@@ -137,6 +194,14 @@ async def generate_title(conversation_id: str, session: AsyncSession = Depends(g
     msg_repo = MessageRepo(session)
     messages = await msg_repo.list_for_conversation(conversation_id)
 
+    if conv.engine_name.startswith("merchant_"):
+        structured_title = _merchant_title(messages)
+        if structured_title:
+            updated = structured_title != conv.title
+            if updated:
+                await repo.update_title(conversation_id, structured_title)
+            return {"title": structured_title, "updated": updated}
+
     exchanges: list[str] = []
     for m in messages:
         payload = orjson.loads(m.payload)
@@ -151,7 +216,7 @@ async def generate_title(conversation_id: str, session: AsyncSession = Depends(g
         return {"title": conv.title}
 
     # Build prompt
-    current_title = conv.title if conv.title != "New Conversation" else ""
+    current_title = conv.title if conv.title not in {"New Conversation", "新复盘"} else ""
     conversation_snippet = "\n".join(exchanges[:6])  # first 3 exchanges
 
     if current_title:
@@ -190,7 +255,7 @@ async def generate_title(conversation_id: str, session: AsyncSession = Depends(g
                 (b.get("text", "") for b in raw if isinstance(b, dict) and b.get("type") == "text"),
                 "",
             )
-        title = raw.strip().strip('"').strip("'")[:60]
+        title = _clean_title(str(raw), conv.title)
         if title and title != current_title:
             await repo.update_title(conversation_id, title)
             return {"title": title, "updated": True}

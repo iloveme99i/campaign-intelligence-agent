@@ -1,4 +1,10 @@
-import { useState, useRef, useEffect, useMemo, type KeyboardEvent } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  type KeyboardEvent,
+} from "react";
 import { Send, Database } from "lucide-react";
 import { useConversationsStore } from "@/store/conversations";
 import { useDisplayStore, GREETING_TTL_MS } from "@/store/display";
@@ -60,7 +66,12 @@ export function WelcomeView({ onSend }: Props) {
   const [text, setText] = useState("");
   const [placeholder, ...suggestions] = useMemo(() => pickSuggestions(5), []);
   const [engine, setEngine] = useState(engines[0]?.name ?? "");
-  const { greeting: cachedGreeting, userName: cachedUser, greetingGeneratedAt, setGreeting: storeGreeting } = useDisplayStore();
+  const {
+    greeting: cachedGreeting,
+    userName: cachedUser,
+    greetingGeneratedAt,
+    setGreeting: storeGreeting,
+  } = useDisplayStore();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Use cached values from store; only call APIs once per session
@@ -69,7 +80,7 @@ export function WelcomeView({ onSend }: Props) {
 
   useEffect(() => {
     if (!engine && engines.length > 0) setEngine(engines[0].name);
-  }, [engines]);
+  }, [engine, engines]);
 
   useEffect(() => {
     const stale = Date.now() - greetingGeneratedAt > GREETING_TTL_MS;
@@ -81,7 +92,7 @@ export function WelcomeView({ onSend }: Props) {
         _greetingFetchInFlight = false;
       });
     });
-  }, []);
+  }, [cachedGreeting, greetingGeneratedAt, storeGreeting]);
 
   const handleSend = () => {
     const trimmed = text.trim();
@@ -112,14 +123,42 @@ export function WelcomeView({ onSend }: Props) {
         {logoUrl ? (
           <img src={logoUrl} alt="Logo" className="w-12 h-12 object-contain" />
         ) : (
-          <svg width="48" height="48" viewBox="0 0 64 64" fill="none" aria-hidden>
-            <path d="M8 42 A30 30 0 0 1 52 10" stroke="#0078D4" strokeWidth="7" strokeLinecap="round"/>
-            <path d="M56 42 A30 30 0 0 0 12 10" stroke="#E8A030" strokeWidth="7" strokeLinecap="round"/>
-            <circle cx="24" cy="28" r="3.5" fill="#D44B20"/>
-            <circle cx="32" cy="28" r="3.5" fill="#D44B20"/>
-            <circle cx="40" cy="28" r="3.5" fill="#D44B20"/>
-            <path d="M8 42 L3 54 L17 45" stroke="#0078D4" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M56 42 L61 54 L47 45" stroke="#E8A030" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
+          <svg
+            width="48"
+            height="48"
+            viewBox="0 0 64 64"
+            fill="none"
+            aria-hidden
+          >
+            <path
+              d="M8 42 A30 30 0 0 1 52 10"
+              stroke="#0078D4"
+              strokeWidth="7"
+              strokeLinecap="round"
+            />
+            <path
+              d="M56 42 A30 30 0 0 0 12 10"
+              stroke="#E8A030"
+              strokeWidth="7"
+              strokeLinecap="round"
+            />
+            <circle cx="24" cy="28" r="3.5" fill="#D44B20" />
+            <circle cx="32" cy="28" r="3.5" fill="#D44B20" />
+            <circle cx="40" cy="28" r="3.5" fill="#D44B20" />
+            <path
+              d="M8 42 L3 54 L17 45"
+              stroke="#0078D4"
+              strokeWidth="5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M56 42 L61 54 L47 45"
+              stroke="#E8A030"
+              strokeWidth="5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         )}
         <h1 className="text-2xl font-semibold tracking-tight text-center max-w-lg leading-snug min-h-[2rem]">
@@ -160,7 +199,9 @@ export function WelcomeView({ onSend }: Props) {
                   className="text-xs bg-transparent border border-border rounded px-2 py-1 text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
                 >
                   {engines.map((e) => (
-                    <option key={e.name} value={e.name}>{e.name}</option>
+                    <option key={e.name} value={e.name}>
+                      {e.name}
+                    </option>
                   ))}
                 </select>
               </div>

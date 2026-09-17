@@ -1,0 +1,4 @@
+campaign_id,campaign_name,objective,start_date,end_date,primary_metric,target_value,attribution_days
+byte_full_funnel_sale,字节系 · 全域大促,参考抖音电商公开大促的短视频、直播、商城和优惠叠加机制；判断哪种承接方案值得扩大。数据完全合成。,2026-06-12,2026-06-18,roi,1.35,3
+tencent_game_return_ops,腾讯游戏 · 回流任务季,参考腾讯游戏公开活动的回流分层、日/周/累计任务和阶段奖励机制；判断任务链是否应继续。数据完全合成。,2026-07-16,2026-07-22,conversion_rate,0.075,7
+tencent_private_retail,腾讯零售 · 私域联动,参考腾讯智慧零售公开案例中的内容触达、小程序承接、发券与支付链路；判断内容与券联动是否保留。数据完全合成。,2026-08-06,2026-08-12,net_revenue,620000,3

@@ -6,16 +6,24 @@ interface Props {
   onStop?: () => void;
   disabled: boolean;
   isStreaming?: boolean;
+  compact?: boolean;
 }
 
 const SLASH_COMMANDS = [
   {
     command: "/improve-context",
-    description: "Analyze this conversation and propose documentation improvements",
+    description:
+      "Analyze this conversation and propose documentation improvements",
   },
 ];
 
-export function MessageInput({ onSend, onStop, disabled, isStreaming }: Props) {
+export function MessageInput({
+  onSend,
+  onStop,
+  disabled,
+  isStreaming,
+  compact = false,
+}: Props) {
   const [text, setText] = useState("");
   const [showCommands, setShowCommands] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -53,11 +61,14 @@ export function MessageInput({ onSend, onStop, disabled, isStreaming }: Props) {
   };
 
   const filteredCommands = SLASH_COMMANDS.filter((c) =>
-    c.command.startsWith(text.toLowerCase())
+    c.command.startsWith(text.toLowerCase()),
   );
 
   return (
-    <div className="border-t border-border px-4 pt-3 pb-2" data-print-hide>
+    <div
+      className={`border-t border-border bg-[hsl(var(--surface))] ${compact ? "px-4 pb-4 pt-3" : "px-4 pb-3 pt-3 md:px-7"}`}
+      data-print-hide
+    >
       {showCommands && filteredCommands.length > 0 && (
         <div className="mb-2 rounded-lg border border-border bg-background shadow-md overflow-hidden">
           {filteredCommands.map((cmd) => (
@@ -71,20 +82,32 @@ export function MessageInput({ onSend, onStop, disabled, isStreaming }: Props) {
               }}
               className="w-full flex items-baseline gap-2 px-3 py-2 text-left hover:bg-muted transition-colors"
             >
-              <span className="text-sm font-mono font-medium text-primary">{cmd.command}</span>
-              <span className="text-xs text-muted-foreground">{cmd.description}</span>
+              <span className="text-sm font-mono font-medium text-primary">
+                {cmd.command}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {cmd.description}
+              </span>
             </button>
           ))}
         </div>
       )}
-      <div className="flex items-end gap-2 bg-muted rounded-lg px-3 py-2">
+      <div
+        className={`${compact ? "w-full" : "mx-auto max-w-4xl"} flex items-end gap-2 rounded-xl border border-border bg-background px-3 py-2 shadow-[var(--shadow-float)] focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15`}
+      >
         <textarea
           ref={textareaRef}
           value={text}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           onInput={handleInput}
-          placeholder={isStreaming ? "Responding…" : "Ask about your data…"}
+          placeholder={
+            isStreaming
+              ? "正在分析…"
+              : compact
+                ? "追问原因、证据或下一步…"
+                : "继续追问原因、证据或下一轮方案…"
+          }
           disabled={disabled}
           rows={1}
           className="flex-1 bg-transparent resize-none outline-none text-sm placeholder:text-muted-foreground disabled:opacity-50 max-h-40"
@@ -92,7 +115,8 @@ export function MessageInput({ onSend, onStop, disabled, isStreaming }: Props) {
         {isStreaming && onStop ? (
           <button
             onClick={onStop}
-            title="Stop generating"
+            title="停止分析"
+            aria-label="停止分析"
             className="flex-shrink-0 p-1.5 rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors"
           >
             <Square className="w-4 h-4" />
@@ -101,6 +125,7 @@ export function MessageInput({ onSend, onStop, disabled, isStreaming }: Props) {
           <button
             onClick={handleSend}
             disabled={disabled || !text.trim()}
+            aria-label="发送"
             className="flex-shrink-0 p-1.5 rounded-md text-primary hover:bg-primary/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             <Send className="w-4 h-4" />

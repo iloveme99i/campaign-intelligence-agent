@@ -1,0 +1,99 @@
+{
+  "date": "2026-09-14",
+  "provider": "DeepSeek official API",
+  "model_reported_by_usage": "deepseek-flash",
+  "dataset": "synthetic cross-industry campaigns; no real ByteDance or Tencent results",
+  "evaluation": "The gate grew from 29 to 33 checks as manual review exposed path, cohort and metric-lineage failures. Counts below preserve the gate version used at each run.",
+  "claim_boundary": "Paired development cases, not a pass-rate estimate or proof of business decision quality.",
+  "runs": [
+    {
+      "case": "byte_sale_cost_scale_before_tool_change",
+      "conversation_id": "78b48e84-32bb-4670-b02c-170d64cba816",
+      "checks_passed_current_evaluator": 29,
+      "checks_total": 29,
+      "initial_evaluator_result": "28/29: diagnosis_matches_task falsely failed because the checker ignored the user's explicit channel request in the same turn",
+      "model_calls": 2,
+      "diagnostic_calls": 2,
+      "successful_diagnostics": 2,
+      "total_tokens": 32740,
+      "elapsed_ms_from_persisted_events": 13791,
+      "manual_review": "The variant and channel drill-downs were relevant; channel cost was correctly identified as not allocatable, so no channel-level efficiency was claimed.",
+      "disposition": "The evaluator now considers both structured task context and explicit user text; the prior restrictive rule remains when no channel need is stated."
+    },
+    {
+      "case": "tencent_game_path_before_tool_change",
+      "conversation_id": "8a29c2f8-e14f-4270-a1f8-d2f240f5bd7d",
+      "checks_passed": 28,
+      "checks_total": 29,
+      "failed_check": "diagnostic_selective",
+      "model_calls": 4,
+      "diagnostic_calls": 3,
+      "successful_diagnostics": 1,
+      "total_tokens": 49901,
+      "elapsed_ms_from_persisted_events": 15288,
+      "manual_review": "The model twice supplied a modified scope to diagnose_dimension. Both calls were rejected; the third call succeeded after reverting to the confirmed scope.",
+      "disposition": "The diagnosis tool no longer accepts scope as model input. It binds the server-confirmed scope internally. The failed run is retained as the regression case, not counted as a pass."
+    },
+    {
+      "case": "tencent_game_path_after_tool_change",
+      "conversation_id": "88bdc8ae-aaa2-4ed2-9765-6138ac6e7cb9",
+      "checks_passed": 29,
+      "checks_total": 29,
+      "model_calls": 2,
+      "diagnostic_calls": 1,
+      "successful_diagnostics": 1,
+      "total_tokens": 27858,
+      "elapsed_ms_from_persisted_events": 14636,
+      "manual_review": "The single variant diagnosis used the server-confirmed scope, answered the task-path question and cited its own evidence. No scope correction call occurred."
+    },
+    {
+      "case": "byte_sale_cost_scale_after_tool_change",
+      "conversation_id": "90e4c525-51eb-4164-a922-4f412efcbed3",
+      "checks_passed": 29,
+      "checks_total": 29,
+      "model_calls": 2,
+      "diagnostic_calls": 2,
+      "successful_diagnostics": 2,
+      "total_tokens": 31738,
+      "elapsed_ms_from_persisted_events": 12110,
+      "manual_review": "Both drill-downs used the bound scope. The answer kept cost allocation and causal boundaries explicit."
+    },
+    {
+      "case": "tencent_game_path_semantics",
+      "conversation_id": "3eae1d0b-b1bf-4dd8-8c05-efe264f20f14",
+      "automated_result_at_run": "31/31",
+      "current_result": "failed after the experiment-control-cohort gate was added",
+      "model_calls": 2,
+      "diagnostic_calls": 1,
+      "total_tokens": 28809,
+      "elapsed_ms_from_persisted_events": 13302,
+      "manual_review": "The path-stage interpretation was fixed, but the action randomized only the existing stage-task cohort while naming the historical login-gift cohort as the experiment control.",
+      "disposition": "Added a hard gate requiring new and unchanged experiences to be randomized inside the same eligible cohort; historical variants may only be observational references."
+    },
+    {
+      "case": "tencent_game_experiment_control",
+      "conversation_id": "4ecad952-3f61-4aac-abac-6ba22a146ad9",
+      "automated_result_at_run": "31/31",
+      "current_result": "failed 31/33 after arithmetic and statistical-lineage gates were added",
+      "model_calls": 2,
+      "diagnostic_calls": 1,
+      "total_tokens": 28826,
+      "elapsed_ms_from_persisted_events": 13311,
+      "manual_review": "The control cohort was fixed, but one sentence paired activation-to-path-purchase rates (19.41% and 9.71%) with the 4.81pp confidence interval and p-value computed for purchase-per-exposure.",
+      "disposition": "The tool now labels its inferential metric explicitly; gates check nearby rate arithmetic and prevent path-stage rates from borrowing purchase-per-exposure statistics."
+    },
+    {
+      "case": "tencent_game_metric_lineage",
+      "conversation_id": "414e784b-31e1-41b1-b1ba-0f1cb64b28fc",
+      "checks_passed": 33,
+      "checks_total": 33,
+      "model_calls": 2,
+      "diagnostic_calls": 1,
+      "successful_diagnostics": 1,
+      "total_tokens": 28780,
+      "elapsed_ms_from_persisted_events": 15031,
+      "manual_review": "Path-stage rates are descriptive and separated from the purchase-per-exposure confidence interval and p-value. The proposed control is inside the same eligible stage-task cohort; the login-gift variant is only an observational reference.",
+      "claim_boundary": "One passing synthetic run after two newly discovered semantic failures is regression evidence, not a reliability rate."
+    }
+  ]
+}

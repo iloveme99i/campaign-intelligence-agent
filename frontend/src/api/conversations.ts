@@ -10,7 +10,7 @@ export async function listConversations(): Promise<ConversationSummary[]> {
 
 export async function createConversation(
   engine_name: string,
-  title = "New Conversation"
+  title = "新建决策记录"
 ): Promise<ConversationSummary> {
   const res = await fetch(`${BASE}/conversations`, {
     method: "POST",

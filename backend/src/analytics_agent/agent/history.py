@@ -21,6 +21,37 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMe
 from analytics_agent.agent.compaction import HistoryCompactor
 
 
+def _history_tool_result(event_type: str, payload: dict) -> str:
+    if event_type != "SQL":
+        value = payload.get("result", "")
+        return value[:4000] if isinstance(value, str) else orjson.dumps(value).decode()[:4000]
+    # Keep valid JSON and provenance when restoring a persisted SQL event.
+    # A bounded preview avoids carrying an entire exported result into each turn.
+    result = {
+        k: payload[k]
+        for k in (
+            "sql",
+            "columns",
+            "truncated",
+            "evidence_id",
+            "snapshot_id",
+            "metric_version",
+            "scope_id",
+            "scope",
+            "warnings",
+            "parameters",
+        )
+        if k in payload
+    }
+    rows = payload.get("rows", [])
+    result["rows"] = rows[:20]
+    result["history_rows_omitted"] = max(0, len(rows) - len(result["rows"]))
+    while len(orjson.dumps(result)) > 16000 and result["rows"]:
+        result["rows"].pop()
+        result["history_rows_omitted"] += 1
+    return orjson.dumps(result).decode()
+
+
 def build_history(
     stored_messages: list,
     current_user_text: str,
@@ -72,6 +103,7 @@ def build_history(
                         "id": msg.id,
                         "name": payload.get("tool_name", ""),
                         "input": payload.get("tool_input", {}),
+                        "run_id": payload.get("tool_run_id"),
                     }
                 )
             elif evt in ("TOOL_RESULT", "SQL"):
@@ -80,8 +112,9 @@ def build_history(
                 tool_results.append(
                     {
                         "id": call_id,
-                        "name": payload.get("tool_name", ""),
-                        "result": payload.get("result", payload.get("sql", ""))[:4000],
+                        "name": payload.get("tool_name", "execute_sql" if evt == "SQL" else ""),
+                        "run_id": payload.get("tool_run_id"),
+                        "result": _history_tool_result(evt, payload),
                     }
                 )
             elif evt == "TEXT":
@@ -127,8 +160,12 @@ def build_history(
             # the IDs are guaranteed to match the AIMessage (avoids Anthropic
             # "unexpected tool_use_id" errors from orphaned DB records).
             for i, tc in enumerate(tool_calls):
-                if i < len(tool_results):
-                    tr = tool_results[i]
+                tr = next(
+                    (r for r in tool_results if tc["run_id"] and r["run_id"] == tc["run_id"]), None
+                )
+                if tr is None and not tc["run_id"] and i < len(tool_results):
+                    tr = tool_results[i]  # Legacy events have no explicit run identifier.
+                if tr is not None:
                     turn_msgs.append(
                         ToolMessage(
                             content=str(tr["result"]),

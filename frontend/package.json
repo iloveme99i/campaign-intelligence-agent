@@ -1,6 +1,6 @@
 {
-  "name": "datahub-analytics-agent-ui",
-  "version": "0.1.0",
+  "name": "campaign-intelligence-ui",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,6 +13,8 @@
     "format": "prettier --write src"
   },
   "dependencies": {
+    "@fontsource-variable/manrope": "^5.3.0",
+    "@fontsource-variable/space-grotesk": "^5.3.0",
     "@radix-ui/react-collapsible": "^1.1.1",
     "@radix-ui/react-scroll-area": "^1.2.0",
     "@radix-ui/react-select": "^2.1.2",

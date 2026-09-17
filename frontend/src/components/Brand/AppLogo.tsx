@@ -8,26 +8,21 @@ export function AppLogo() {
       {logoUrl ? (
         <img
           src={logoUrl}
-          alt="Logo"
-          className="w-5 h-5 object-contain flex-shrink-0"
+          alt="品牌标识"
+          className="h-7 w-7 flex-shrink-0 rounded-md object-contain"
           onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
         />
       ) : (
-        <svg width="22" height="22" viewBox="0 0 64 64" fill="none" aria-hidden>
-          <path d="M8 42 A30 30 0 0 1 52 10" stroke="#0078D4" strokeWidth="7" strokeLinecap="round"/>
-          <path d="M56 42 A30 30 0 0 0 12 10" stroke="#E8A030" strokeWidth="7" strokeLinecap="round"/>
-          <circle cx="24" cy="28" r="3.5" fill="#D44B20"/>
-          <circle cx="32" cy="28" r="3.5" fill="#D44B20"/>
-          <circle cx="40" cy="28" r="3.5" fill="#D44B20"/>
-          <path d="M8 42 L3 54 L17 45" stroke="#0078D4" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
-          <path d="M56 42 L61 54 L47 45" stroke="#E8A030" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
+        <svg className="h-7 w-7 text-primary" viewBox="0 0 28 28" fill="none" aria-hidden>
+          <rect x="1" y="1" width="26" height="26" rx="6" fill="currentColor" />
+          <path d="M8.25 8.5h11.5M8.25 13.75h7.5M8.25 19h9.25" stroke="white" strokeWidth="1.65" strokeLinecap="round" />
+          <circle cx="19.75" cy="13.75" r="1.25" fill="white" />
         </svg>
       )}
       <span
-        className="text-base font-semibold tracking-tight text-foreground"
-        style={{ letterSpacing: "-0.02em" }}
+        className="whitespace-nowrap font-['Space_Grotesk_Variable'] text-[15px] font-semibold tracking-[-0.025em] text-foreground"
       >
-        {appName || "Analytics Agent"}
+        {appName || "Campaign Intelligence"}
       </span>
     </div>
   );

@@ -1,0 +1,65 @@
+{
+  "run_at": "2026-09-15T14:52:13.421553+00:00",
+  "case_file": "/Users/belief/Documents/工作/商家活动复盘Agent/app/evals/merchant_review_cases.jsonl",
+  "executed": 1,
+  "passed": 1,
+  "results": [
+    {
+      "id": "byte_full_funnel_sale__continue__goal__full",
+      "passed": true,
+      "assertions": {
+        "first_tool": true,
+        "diagnosis_present": true,
+        "diagnosis_allowed": true,
+        "diagnosis_bounded": true,
+        "answer_topics": true,
+        "causal_limit": true,
+        "quality_status": true
+      },
+      "diagnostic_dimensions": [
+        "variant"
+      ],
+      "quality": {
+        "status": "passed",
+        "passed": 36,
+        "total": 36,
+        "failed_checks": [],
+        "groups": [
+          {
+            "key": "scope",
+            "label": "口径完整",
+            "passed": 5,
+            "total": 5
+          },
+          {
+            "key": "evidence",
+            "label": "证据闭环",
+            "passed": 9,
+            "total": 9
+          },
+          {
+            "key": "diagnosis",
+            "label": "诊断克制",
+            "passed": 5,
+            "total": 5
+          },
+          {
+            "key": "decision",
+            "label": "决策边界",
+            "passed": 17,
+            "total": 17
+          }
+        ],
+        "evidence_count": 14,
+        "model_calls": 2,
+        "input_tokens": 27652,
+        "output_tokens": 1977,
+        "total_tokens": 29629,
+        "elapsed_seconds": 11.037,
+        "quality_retry": null
+      },
+      "conversation_id": "4acb6427-bba3-4714-839f-b11a94f9ef19",
+      "ordinal": 1
+    }
+  ]
+}

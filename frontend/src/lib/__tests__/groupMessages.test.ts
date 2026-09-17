@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { groupIntoTurns, shouldShowSeparator, getSepUsage } from "../groupMessages";
+import { groupIntoTurns, latestTurnDecision, latestTurnOutcome, shouldShowSeparator, getSepUsage } from "../groupMessages";
 import {v4 as uuidv4} from "uuid";
 import type { UIMessage } from "@/types";
 
@@ -77,6 +77,42 @@ describe("groupIntoTurns", () => {
     const messages: UIMessage[] = [userMsg("abc"), finalText()];
     const [group] = groupIntoTurns(messages, false);
     expect(group.key).toBe("abc");
+  });
+});
+
+describe("latestTurnDecision", () => {
+  it("does not show a previous decision after a new review turn starts", () => {
+    const previous = msg({
+      id: "decision-old",
+      role: "assistant",
+      event_type: "DECISION",
+      payload: { scope_id: "scope-old" },
+    });
+    const current = msg({
+      id: "decision-new",
+      role: "assistant",
+      event_type: "DECISION",
+      payload: { scope_id: "scope-new" },
+    });
+    const messages = [userMsg("old"), finalText("old-answer"), previous, userMsg("new")];
+
+    expect(latestTurnDecision(messages)).toBeUndefined();
+    expect(latestTurnDecision([...messages, finalText("new-answer"), current])).toBe(current);
+  });
+});
+
+describe("latestTurnOutcome", () => {
+  it("binds the returned result to the current review turn only", () => {
+    const outcome = msg({
+      id: "outcome-current",
+      role: "assistant",
+      event_type: "OUTCOME",
+      payload: { status: "recorded" },
+    });
+    expect(latestTurnOutcome([userMsg(), finalText(), outcome])).toBe(outcome);
+    expect(
+      latestTurnOutcome([userMsg(), finalText(), outcome, userMsg("next")]),
+    ).toBeUndefined();
   });
 });
 

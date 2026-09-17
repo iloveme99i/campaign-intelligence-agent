@@ -1,4 +1,4 @@
-import { Trash2 } from "lucide-react";
+import { FileText, Trash2 } from "lucide-react";
 import type { ConversationSummary } from "@/types";
 
 interface Props {
@@ -11,7 +11,7 @@ interface Props {
 export function ConversationItem({ conversation, isActive, onSelect, onDelete }: Props) {
   return (
     <div
-      className={`group flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer transition-colors ${
+      className={`group flex cursor-pointer items-start gap-2.5 rounded-lg px-2.5 py-2.5 transition-colors ${
         isActive
           ? "bg-secondary text-secondary-foreground"
           : "hover:bg-muted text-foreground"
@@ -20,16 +20,23 @@ export function ConversationItem({ conversation, isActive, onSelect, onDelete }:
       data-conv-id={conversation.id}
       onClick={onSelect}
     >
-      <div className="flex-1 min-w-0">
-        <p className="text-sm truncate">{conversation.title}</p>
-        <p className="text-xs text-muted-foreground">{conversation.engine_name}</p>
+      <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.7} />
+      <div className="min-w-0 flex-1">
+        <p
+          className="line-clamp-2 break-words text-sm font-medium leading-5"
+          title={conversation.title}
+        >
+          {conversation.title}
+        </p>
+        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">活动决策记录</p>
       </div>
       <button
         onClick={(e) => {
           e.stopPropagation();
           onDelete();
         }}
-        className="opacity-0 group-hover:opacity-100 p-1 rounded hover:text-red-500 transition-all"
+        aria-label={`删除${conversation.title}`}
+        className="rounded p-1 text-muted-foreground opacity-0 outline-none hover:bg-red-500/10 hover:text-red-600 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary group-hover:opacity-100"
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>

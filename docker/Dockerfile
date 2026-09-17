@@ -48,4 +48,4 @@ COPY --from=fe-build /app/frontend/dist ./frontend/dist
 
 EXPOSE 8100
 
-CMD ["sh", "-c", "analytics-agent bootstrap && uvicorn analytics_agent.main:app --host 0.0.0.0 --port 8100"]
+CMD ["sh", "-c", "campaign-intelligence bootstrap && uvicorn analytics_agent.main:app --host 0.0.0.0 --port 8100"]

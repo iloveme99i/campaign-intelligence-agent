@@ -2,7 +2,12 @@ import { useState, useEffect } from "react";
 import { Check, Eye, EyeOff, Loader2, X } from "lucide-react";
 import { getLlmSettings, saveLlmSettings, testLlmKey } from "@/api/settings";
 
-type Provider = "anthropic" | "openai" | "google" | "bedrock" | "openai-compatible";
+type Provider =
+  | "anthropic"
+  | "openai"
+  | "google"
+  | "bedrock"
+  | "openai-compatible";
 type HeaderPair = { key: string; value: string };
 
 // Sentinel value for the "Custom…" radio option on providers (Bedrock) where
@@ -11,26 +16,57 @@ const CUSTOM_MODEL_VALUE = "__custom__";
 
 const MODELS = {
   anthropic: [
-    { value: "claude-opus-4-7",           label: "Claude Opus 4.7",    note: "Most capable" },
-    { value: "claude-sonnet-4-6",         label: "Claude Sonnet 4.6",  note: "Recommended"  },
-    { value: "claude-haiku-4-5-20251001", label: "Claude Haiku 4.5",   note: "Fastest"      },
+    {
+      value: "claude-opus-4-7",
+      label: "Claude Opus 4.7",
+      note: "Most capable",
+    },
+    {
+      value: "claude-sonnet-4-6",
+      label: "Claude Sonnet 4.6",
+      note: "Recommended",
+    },
+    {
+      value: "claude-haiku-4-5-20251001",
+      label: "Claude Haiku 4.5",
+      note: "Fastest",
+    },
   ],
   openai: [
-    { value: "gpt-4o",      label: "GPT-4o",      note: "Recommended" },
-    { value: "gpt-4o-mini", label: "GPT-4o Mini", note: "Fastest"     },
-    { value: "o1",          label: "o1",           note: "Reasoning"   },
+    { value: "gpt-4o", label: "GPT-4o", note: "Recommended" },
+    { value: "gpt-4o-mini", label: "GPT-4o Mini", note: "Fastest" },
+    { value: "o1", label: "o1", note: "Reasoning" },
   ],
   google: [
-    { value: "gemini-2.0-flash", label: "Gemini 2.0 Flash", note: "Recommended" },
-    { value: "gemini-1.5-pro",   label: "Gemini 1.5 Pro",   note: "Most capable" },
-    { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash", note: "Fastest"      },
+    {
+      value: "gemini-2.0-flash",
+      label: "Gemini 2.0 Flash",
+      note: "Recommended",
+    },
+    { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro", note: "Most capable" },
+    { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash", note: "Fastest" },
   ],
   bedrock: [
-    { value: "us.anthropic.claude-sonnet-4-5-20250929-v1:0", label: "Claude Sonnet 4.5 (Bedrock)", note: "Recommended" },
-    { value: "us.anthropic.claude-haiku-4-5-20251001-v1:0",  label: "Claude Haiku 4.5 (Bedrock)",  note: "Fastest"     },
-    { value: CUSTOM_MODEL_VALUE,                              label: "Custom model ID",            note: "Enter your own" },
+    {
+      value: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+      label: "Claude Sonnet 4.5 (Bedrock)",
+      note: "Recommended",
+    },
+    {
+      value: "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+      label: "Claude Haiku 4.5 (Bedrock)",
+      note: "Fastest",
+    },
+    {
+      value: CUSTOM_MODEL_VALUE,
+      label: "Custom model ID",
+      note: "Enter your own",
+    },
   ],
-} as Record<Exclude<Provider, "openai-compatible">, { value: string; label: string; note: string }[]>;
+} as Record<
+  Exclude<Provider, "openai-compatible">,
+  { value: string; label: string; note: string }[]
+>;
 
 function defaultModelFor(p: Provider): string {
   if (p === "openai-compatible") return "";
@@ -45,7 +81,11 @@ type KeyStatus =
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
-export function ModelSection() {
+export function ModelSection({
+  merchantMode = false,
+}: {
+  merchantMode?: boolean;
+}) {
   const [provider, setProvider] = useState<Provider>("anthropic");
   const [model, setModel] = useState(defaultModelFor("anthropic"));
   const [customModel, setCustomModel] = useState("");
@@ -75,17 +115,32 @@ export function ModelSection() {
 
   const isCustomModel = model === CUSTOM_MODEL_VALUE;
   const effectiveModel =
-    provider === "openai-compatible" ? customModel.trim() : isCustomModel ? customModel.trim() : model;
+    provider === "openai-compatible"
+      ? customModel.trim()
+      : isCustomModel
+        ? customModel.trim()
+        : model;
   const hasExistingKey = savedProvider === provider && !apiKey;
   // Bedrock has a separate "configured" concept — either stored keys OR the
   // user opted into the system credential chain by saving with blank fields.
-  const hasExistingAwsKeys = provider === "bedrock" && hasSavedAwsKeys && !awsAccessKey && !awsSecret;
+  const hasExistingAwsKeys =
+    provider === "bedrock" && hasSavedAwsKeys && !awsAccessKey && !awsSecret;
 
   useEffect(() => {
     getLlmSettings()
       .then((s) => {
         const p = (s.provider ?? "anthropic") as Provider;
-        const knownProvider = (p in MODELS ? p : "anthropic") as Exclude<Provider, "openai-compatible">;
+        if (merchantMode && p !== "openai-compatible" && !s.has_key) {
+          setProvider("openai-compatible");
+          setCustomUrl("https://api.deepseek.com");
+          setCustomModel("deepseek-v4-flash");
+          setShowModelInput(true);
+          return;
+        }
+        const knownProvider = (p in MODELS ? p : "anthropic") as Exclude<
+          Provider,
+          "openai-compatible"
+        >;
         setProvider(p);
         if (p === "openai-compatible") {
           // OpenAI-compatible provider: load URL, model, and headers from settings.
@@ -95,12 +150,12 @@ export function ModelSection() {
           const savedModel = s.openai_compatible_model || s.model || "";
           setCustomModel(savedModel);
           if (savedModel) setShowModelInput(true);
+          if (s.has_key) setSavedProvider(p);
           if (s.has_openai_compatible_headers) {
-            setSavedProvider(p);
             const keys = s.openai_compatible_header_keys ?? [];
             setSavedHeaderKeys(keys);
             // Pre-populate headers with keys but no values so user can update
-            setCustomHeaders(keys.map(k => ({ key: k, value: "" })));
+            setCustomHeaders(keys.map((k) => ({ key: k, value: "" })));
           }
         } else {
           const knownModels = MODELS[knownProvider].map((m) => m.value);
@@ -117,15 +172,42 @@ export function ModelSection() {
         }
         if (s.aws_region) setAwsRegion(s.aws_region);
         if (s.has_aws_keys) setHasSavedAwsKeys(true);
-        if (s.enable_prompt_cache !== undefined) setEnablePromptCache(s.enable_prompt_cache);
+        if (s.enable_prompt_cache !== undefined)
+          setEnablePromptCache(s.enable_prompt_cache);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [merchantMode]);
 
   // Reset key status whenever any credential field changes.
-  useEffect(() => { setKeyStatus({ state: "idle" }); }, [apiKey, provider, awsAccessKey, awsSecret, awsRegion, awsSessionToken, customUrl, customHeaders]);
+  useEffect(() => {
+    setKeyStatus({ state: "idle" });
+  }, [
+    apiKey,
+    provider,
+    awsAccessKey,
+    awsSecret,
+    awsRegion,
+    awsSessionToken,
+    customUrl,
+    customHeaders,
+  ]);
   // Reset save status on any change.
-  useEffect(() => { setSaveStatus("idle"); setError(null); }, [provider, model, customModel, apiKey, awsAccessKey, awsSecret, awsRegion, awsSessionToken, enablePromptCache, customUrl, customHeaders]);
+  useEffect(() => {
+    setSaveStatus("idle");
+    setError(null);
+  }, [
+    provider,
+    model,
+    customModel,
+    apiKey,
+    awsAccessKey,
+    awsSecret,
+    awsRegion,
+    awsSessionToken,
+    enablePromptCache,
+    customUrl,
+    customHeaders,
+  ]);
 
   const handleProvider = (p: Provider) => {
     setProvider(p);
@@ -151,23 +233,36 @@ export function ModelSection() {
     aws_session_token: awsSessionToken.trim(),
     base_url: customUrl.trim(),
     openai_compatible_model: customModel.trim(),
-    openai_compatible_headers: customHeaders.length > 0 ? JSON.stringify(Object.fromEntries(customHeaders.map((h) => [h.key.trim(), h.value.trim()]))) : "",
+    openai_compatible_headers:
+      customHeaders.length > 0
+        ? JSON.stringify(
+            Object.fromEntries(
+              customHeaders.map((h) => [h.key.trim(), h.value.trim()]),
+            ),
+          )
+        : "",
   });
 
   const runKeyTest = async (): Promise<boolean> => {
     // For non-Bedrock/openai-compatible: nothing new to test if field is empty; existing key is fine.
-    if (provider !== "bedrock" && provider !== "openai-compatible" && !apiKey.trim()) return hasExistingKey;
+    if (
+      provider !== "bedrock" &&
+      provider !== "openai-compatible" &&
+      !apiKey.trim()
+    )
+      return hasExistingKey;
     // For Bedrock and custom: always testable — use either the typed creds or existing stored creds.
     setKeyStatus({ state: "testing" });
     try {
       const result = await testLlmKey(buildTestPayload());
-      setKeyStatus(result.ok
-        ? { state: "ok", msg: result.message }
-        : { state: "fail", msg: result.message }
+      setKeyStatus(
+        result.ok
+          ? { state: "ok", msg: result.message }
+          : { state: "fail", msg: result.message },
       );
       return result.ok;
     } catch {
-      setKeyStatus({ state: "fail", msg: "Can't reach the server to verify" });
+      setKeyStatus({ state: "fail", msg: "无法连接服务，请稍后重试" });
       return false;
     }
   };
@@ -185,6 +280,11 @@ export function ModelSection() {
         setSaveStatus("error");
         return;
       }
+      if (!apiKey.trim() && !hasExistingKey && customHeaders.length === 0) {
+        setError("请输入 API Key。密钥只会加密保存在本机数据库中。");
+        setSaveStatus("error");
+        return;
+      }
     }
     setSaveStatus("saving");
     try {
@@ -193,18 +293,27 @@ export function ModelSection() {
         // chain if keys are blank". Still run a test if the user hasn't yet.
         if (keyStatus.state !== "ok") {
           const ok = await runKeyTest();
-          if (!ok) { setSaveStatus("error"); return; }
+          if (!ok) {
+            setSaveStatus("error");
+            return;
+          }
         }
       } else if (provider === "openai-compatible") {
         // OpenAI-compatible: always require a test before saving
         if (keyStatus.state !== "ok") {
           const ok = await runKeyTest();
-          if (!ok) { setSaveStatus("error"); return; }
+          if (!ok) {
+            setSaveStatus("error");
+            return;
+          }
         }
       } else if (apiKey.trim()) {
         if (keyStatus.state !== "ok") {
           const ok = await runKeyTest();
-          if (!ok) { setSaveStatus("error"); return; }
+          if (!ok) {
+            setSaveStatus("error");
+            return;
+          }
         }
       } else if (!hasExistingKey) {
         setError("Enter an API key to save.");
@@ -223,7 +332,14 @@ export function ModelSection() {
         enable_prompt_cache: enablePromptCache,
         base_url: customUrl.trim(),
         openai_compatible_model: customModel.trim(),
-        openai_compatible_headers: customHeaders.length > 0 ? JSON.stringify(Object.fromEntries(customHeaders.map((h) => [h.key.trim(), h.value.trim()]))) : "",
+        openai_compatible_headers:
+          customHeaders.length > 0
+            ? JSON.stringify(
+                Object.fromEntries(
+                  customHeaders.map((h) => [h.key.trim(), h.value.trim()]),
+                ),
+              )
+            : "",
       });
 
       if (apiKey.trim()) {
@@ -251,92 +367,125 @@ export function ModelSection() {
   if (loading) {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Loader2 className="w-4 h-4 animate-spin" /> Loading…
+        <Loader2 className="w-4 h-4 animate-spin" /> 正在读取模型配置…
       </div>
     );
   }
 
-  const keyPlaceholder = hasExistingKey && !apiKey
-    ? "Key saved — enter a new one to change"
-    : provider === "anthropic" ? "sk-ant-api03-…"
-    : provider === "google" ? "AIza…"
-    : "sk-proj-…";
+  const keyPlaceholder =
+    hasExistingKey && !apiKey
+      ? "Key saved — enter a new one to change"
+      : provider === "anthropic"
+        ? "sk-ant-api03-…"
+        : provider === "google"
+          ? "AIza…"
+          : "sk-proj-…";
 
   const providerLabel = (p: Provider) =>
-    p === "anthropic" ? "Anthropic"
-    : p === "openai" ? "OpenAI"
-    : p === "google" ? "Google"
-    : p === "bedrock" ? "AWS Bedrock"
-    : "OpenAI-compatible";
+    p === "anthropic"
+      ? "Anthropic"
+      : p === "openai"
+        ? "OpenAI"
+        : p === "google"
+          ? "Google"
+          : p === "bedrock"
+            ? "AWS Bedrock"
+            : "DeepSeek / 兼容 API";
 
   return (
     <div className="max-w-lg space-y-8">
       {/* Provider */}
-      <div className="space-y-3">
-        <label className="text-sm font-medium text-foreground">Provider</label>
-        <div className="flex flex-nowrap rounded-xl border border-border p-1 gap-1 w-fit max-w-full overflow-x-auto">
-          {(["anthropic", "openai", "google", "bedrock", "openai-compatible"] as Provider[]).map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => handleProvider(p)}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 whitespace-nowrap
-                ${provider === p
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+      {!merchantMode && (
+        <div className="space-y-3">
+          <label className="text-sm font-medium text-foreground">
+            模型服务
+          </label>
+          <div className="flex flex-nowrap rounded-xl border border-border p-1 gap-1 w-fit max-w-full overflow-x-auto">
+            {(
+              [
+                "anthropic",
+                "openai",
+                "google",
+                "bedrock",
+                "openai-compatible",
+              ] as Provider[]
+            ).map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => handleProvider(p)}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 whitespace-nowrap
+                ${
+                  provider === p
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
-            >
-              {providerLabel(p)}
-            </button>
-          ))}
+              >
+                {providerLabel(p)}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Model — for known providers */}
       {provider !== "openai-compatible" && (
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">Model</label>
+          <label className="text-sm font-medium text-foreground">模型</label>
           <div className="space-y-1">
-            {MODELS[provider as Exclude<Provider, "openai-compatible">].map((m) => {
-              const active = model === m.value;
-              return (
-                <button
-                  key={m.value}
-                  type="button"
-                  onClick={() => setModel(m.value)}
-                  className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl text-left
+            {MODELS[provider as Exclude<Provider, "openai-compatible">].map(
+              (m) => {
+                const active = model === m.value;
+                return (
+                  <button
+                    key={m.value}
+                    type="button"
+                    onClick={() => setModel(m.value)}
+                    className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl text-left
                     transition-all duration-150 border
-                    ${active
-                      ? "border-primary/30 bg-primary/[0.05]"
-                      : "border-transparent hover:border-border hover:bg-muted/40"
+                    ${
+                      active
+                        ? "border-primary/30 bg-primary/[0.05]"
+                        : "border-transparent hover:border-border hover:bg-muted/40"
                     }`}
-                >
-                  <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center
+                  >
+                    <div
+                      className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center
                     transition-all duration-150
-                    ${active ? "border-primary bg-primary" : "border-border"}`}>
-                    {active && <div className="w-2 h-2 rounded-full bg-white" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className={`text-sm font-medium ${active ? "text-foreground" : "text-foreground/80"}`}>
-                      {m.label}
+                    ${active ? "border-primary bg-primary" : "border-border"}`}
+                    >
+                      {active && (
+                        <div className="w-2 h-2 rounded-full bg-white" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span
+                        className={`text-sm font-medium ${active ? "text-foreground" : "text-foreground/80"}`}
+                      >
+                        {m.label}
+                      </span>
+                    </div>
+                    <span
+                      className={`text-xs flex-shrink-0
+                    ${active ? "text-primary/70" : "text-muted-foreground/50"}`}
+                    >
+                      {m.note}
                     </span>
-                  </div>
-                  <span className={`text-xs flex-shrink-0
-                    ${active ? "text-primary/70" : "text-muted-foreground/50"}`}>
-                    {m.note}
-                  </span>
-                </button>
-              );
-            })}
+                  </button>
+                );
+              },
+            )}
           </div>
           {isCustomModel && (
             <input
               type="text"
               value={customModel}
               onChange={(e) => setCustomModel(e.target.value)}
-              placeholder={provider === "bedrock"
-                ? "us.anthropic.claude-opus-4-5-20251001-v1:0"
-                : "model-id"}
+              placeholder={
+                provider === "bedrock"
+                  ? "us.anthropic.claude-opus-4-5-20251001-v1:0"
+                  : "model-id"
+              }
               className="w-full mt-2 bg-background border border-border rounded-xl px-4 py-3
                          text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/25
                          focus:border-primary/50 placeholder:text-muted-foreground/30"
@@ -348,36 +497,65 @@ export function ModelSection() {
       {/* Credentials — openai-compatible config, single key, or Bedrock AWS fields. */}
       {provider === "openai-compatible" ? (
         <div className="space-y-4 rounded-lg border border-border bg-muted/20 p-4">
+          <button
+            type="button"
+            onClick={() => {
+              setCustomUrl("https://api.deepseek.com");
+              setCustomModel("deepseek-v4-flash");
+              setShowModelInput(true);
+              setCustomHeaders([]);
+            }}
+            className="flex w-full items-center justify-between rounded-lg border border-primary/25 bg-primary/5 px-3 py-2.5 text-left outline-none hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <span>
+              <span className="block text-sm font-medium text-foreground">
+                DeepSeek 官方 API
+              </span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">
+                自动填写官方地址与支持工具调用的模型
+              </span>
+            </span>
+            <span className="text-xs font-medium text-primary">使用</span>
+          </button>
           <div>
             <label className="text-xs font-medium text-muted-foreground">
-              LLM Backend URL <span className="text-primary">*</span>
+              API 地址 <span className="text-primary">*</span>
             </label>
             <input
               type="text"
               value={customUrl}
               onChange={(e) => setCustomUrl(e.target.value)}
-              placeholder="http://localhost:8000/v1"
+              placeholder="https://api.deepseek.com"
               className="w-full mt-1 bg-background border border-border rounded-xl px-4 py-3
                          text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/25
                          focus:border-primary/50 placeholder:text-muted-foreground/30"
             />
-            <p className="text-xs text-muted-foreground/60 mt-1">OpenAI-compatible endpoint</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">
+              兼容 OpenAI Chat Completions 的服务地址
+            </p>
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground">Model Name</label>
-            <p className="text-xs text-muted-foreground/60 mt-0.5 mb-2">Set by your proxy — override only if needed</p>
-            {(showModelInput || customModel) ? (
+            <label className="text-xs font-medium text-muted-foreground">
+              模型名称
+            </label>
+            <p className="text-xs text-muted-foreground/60 mt-0.5 mb-2">
+              DeepSeek 当前推荐 deepseek-v4-flash
+            </p>
+            {showModelInput || customModel ? (
               <div className="flex items-center gap-1.5">
                 <input
                   type="text"
                   value={customModel}
                   onChange={(e) => setCustomModel(e.target.value)}
-                  placeholder="model-id"
+                  placeholder="deepseek-v4-flash"
                   className="flex-1 text-xs bg-background border border-border rounded px-2.5 py-1.5 font-mono focus:outline-none focus:ring-1 focus:ring-primary/50 placeholder:text-muted-foreground/30"
                 />
                 <button
                   type="button"
-                  onClick={() => { setCustomModel(""); setShowModelInput(false); }}
+                  onClick={() => {
+                    setCustomModel("");
+                    setShowModelInput(false);
+                  }}
                   className="text-muted-foreground/40 hover:text-red-500 transition-colors p-0.5"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -389,13 +567,49 @@ export function ModelSection() {
                 onClick={() => setShowModelInput(true)}
                 className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
               >
-                + Set model name
+                + 填写模型名称
               </button>
             )}
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground">Custom Headers (optional)</label>
-            <p className="text-xs text-muted-foreground/60 mt-0.5 mb-2">Key-value pairs for authentication and other headers</p>
+            <label className="text-xs font-medium text-muted-foreground">
+              API Key <span className="text-primary">*</span>
+            </label>
+            <div className="relative mt-1">
+              <input
+                type={showKey ? "text" : "password"}
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder={
+                  hasExistingKey ? "已安全保存；输入新 Key 可替换" : "sk-..."
+                }
+                autoComplete="off"
+                className="w-full rounded-xl border border-border bg-background px-4 py-3 pr-11 font-mono text-sm outline-none placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/25"
+              />
+              <button
+                type="button"
+                aria-label={showKey ? "隐藏 API Key" : "显示 API Key"}
+                onClick={() => setShowKey((value) => !value)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                {showKey ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground/60">
+              密钥加密保存在本机，不会回显到页面。
+            </p>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">
+              自定义请求头（高级，可选）
+            </label>
+            <p className="text-xs text-muted-foreground/60 mt-0.5 mb-2">
+              仅用于企业网关或代理；DeepSeek 官方 API 不需要填写。
+            </p>
             <div className="space-y-1">
               {customHeaders.map((header, idx) => {
                 const isSavedKey = savedHeaderKeys.includes(header.key);
@@ -406,7 +620,9 @@ export function ModelSection() {
                       value={header.key}
                       placeholder="Authorization"
                       onChange={(e) => {
-                        const next = customHeaders.map((h, i) => (i === idx ? { ...h, key: e.target.value } : h));
+                        const next = customHeaders.map((h, i) =>
+                          i === idx ? { ...h, key: e.target.value } : h,
+                        );
                         setCustomHeaders(next);
                       }}
                       className="w-32 text-xs bg-background border border-border rounded px-2.5 py-1.5 font-mono focus:outline-none focus:ring-1 focus:ring-primary/50"
@@ -415,16 +631,26 @@ export function ModelSection() {
                     <input
                       type="text"
                       value={header.value}
-                      placeholder={isSavedKey && !header.value ? "Header unchanged — enter new value to update" : "Bearer …"}
+                      placeholder={
+                        isSavedKey && !header.value
+                          ? "Header unchanged — enter new value to update"
+                          : "Bearer …"
+                      }
                       onChange={(e) => {
-                        const next = customHeaders.map((h, i) => (i === idx ? { ...h, value: e.target.value } : h));
+                        const next = customHeaders.map((h, i) =>
+                          i === idx ? { ...h, value: e.target.value } : h,
+                        );
                         setCustomHeaders(next);
                       }}
                       className="flex-1 text-xs bg-background border border-border rounded px-2.5 py-1.5 font-mono focus:outline-none focus:ring-1 focus:ring-primary/50"
                     />
                     <button
                       type="button"
-                      onClick={() => setCustomHeaders(customHeaders.filter((_, i) => i !== idx))}
+                      onClick={() =>
+                        setCustomHeaders(
+                          customHeaders.filter((_, i) => i !== idx),
+                        )
+                      }
                       className="text-muted-foreground/40 hover:text-red-500 transition-colors p-0.5"
                     >
                       <X className="w-3.5 h-3.5" />
@@ -434,10 +660,12 @@ export function ModelSection() {
               })}
               <button
                 type="button"
-                onClick={() => setCustomHeaders([...customHeaders, { key: "", value: "" }])}
+                onClick={() =>
+                  setCustomHeaders([...customHeaders, { key: "", value: "" }])
+                }
                 className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
               >
-                + Add header
+                + 添加请求头
               </button>
             </div>
           </div>
@@ -445,14 +673,19 @@ export function ModelSection() {
       ) : provider === "bedrock" ? (
         <div className="space-y-4">
           <div>
-            <label className="text-sm font-medium text-foreground">AWS credentials</label>
+            <label className="text-sm font-medium text-foreground">
+              AWS credentials
+            </label>
             <p className="text-xs text-muted-foreground/60 mt-1">
-              Leave access key / secret blank to use the system AWS credential chain
-              (env vars, <span className="font-mono">~/.aws/credentials</span>, IAM role).
+              Leave access key / secret blank to use the system AWS credential
+              chain (env vars,{" "}
+              <span className="font-mono">~/.aws/credentials</span>, IAM role).
             </p>
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground">AWS region</label>
+            <label className="text-xs font-medium text-muted-foreground">
+              AWS region
+            </label>
             <input
               type="text"
               value={awsRegion}
@@ -464,25 +697,37 @@ export function ModelSection() {
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground">Access key ID</label>
+            <label className="text-xs font-medium text-muted-foreground">
+              Access key ID
+            </label>
             <input
               type="text"
               value={awsAccessKey}
               onChange={(e) => setAwsAccessKey(e.target.value)}
-              placeholder={hasExistingAwsKeys ? "Stored — enter a new one to change" : "AKIA… (optional)"}
+              placeholder={
+                hasExistingAwsKeys
+                  ? "Stored — enter a new one to change"
+                  : "AKIA… (optional)"
+              }
               className="w-full mt-1 bg-background border border-border rounded-xl px-4 py-2.5
                          text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/25
                          focus:border-primary/50 placeholder:text-muted-foreground/30"
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground">Secret access key</label>
+            <label className="text-xs font-medium text-muted-foreground">
+              Secret access key
+            </label>
             <div className="relative">
               <input
                 type={showAwsSecret ? "text" : "password"}
                 value={awsSecret}
                 onChange={(e) => setAwsSecret(e.target.value)}
-                placeholder={hasExistingAwsKeys ? "Stored — enter a new one to change" : "optional"}
+                placeholder={
+                  hasExistingAwsKeys
+                    ? "Stored — enter a new one to change"
+                    : "optional"
+                }
                 className="w-full mt-1 bg-background border border-border rounded-xl px-4 py-2.5
                            text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/25
                            focus:border-primary/50 placeholder:text-muted-foreground/30 pr-11"
@@ -492,11 +737,18 @@ export function ModelSection() {
                 onClick={() => setShowAwsSecret((v) => !v)}
                 className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-muted-foreground"
               >
-                {showAwsSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showAwsSecret ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
               </button>
             </div>
           </div>
-          <details className="text-xs" open={showSessionToken || !!awsSessionToken}>
+          <details
+            className="text-xs"
+            open={showSessionToken || !!awsSessionToken}
+          >
             <summary
               className="cursor-pointer text-muted-foreground/60 hover:text-muted-foreground select-none"
               onClick={() => setShowSessionToken((v) => !v)}
@@ -522,14 +774,20 @@ export function ModelSection() {
               type={showKey ? "text" : "password"}
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              onBlur={() => { if (apiKey.trim()) runKeyTest(); }}
+              onBlur={() => {
+                if (apiKey.trim()) runKeyTest();
+              }}
               placeholder={keyPlaceholder}
               className={`w-full bg-background border rounded-xl px-4 py-3 text-sm font-mono
                 focus:outline-none focus:ring-2 focus:ring-primary/25
                 placeholder:text-muted-foreground/30 transition-all pr-11
-                ${keyStatus.state === "ok"   ? "border-emerald-500/50 focus:border-emerald-500/60"
-                : keyStatus.state === "fail" ? "border-red-400/50 focus:border-red-400/60"
-                : "border-border focus:border-primary/50"}`}
+                ${
+                  keyStatus.state === "ok"
+                    ? "border-emerald-500/50 focus:border-emerald-500/60"
+                    : keyStatus.state === "fail"
+                      ? "border-red-400/50 focus:border-red-400/60"
+                      : "border-border focus:border-primary/50"
+                }`}
             />
             <button
               type="button"
@@ -537,7 +795,11 @@ export function ModelSection() {
               className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/40
                          hover:text-muted-foreground transition-colors"
             >
-              {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showKey ? (
+                <EyeOff className="w-4 h-4" />
+              ) : (
+                <Eye className="w-4 h-4" />
+              )}
             </button>
           </div>
           {keyStatus.state === "idle" && !hasExistingKey && (
@@ -545,8 +807,8 @@ export function ModelSection() {
               {provider === "anthropic"
                 ? "console.anthropic.com/settings/api-keys"
                 : provider === "google"
-                ? "aistudio.google.com/app/apikey"
-                : "platform.openai.com/api-keys"}
+                  ? "aistudio.google.com/app/apikey"
+                  : "platform.openai.com/api-keys"}
             </p>
           )}
         </div>
@@ -564,10 +826,15 @@ export function ModelSection() {
               className="mt-0.5 w-4 h-4 rounded border-border accent-primary cursor-pointer"
             />
             <span className="flex-1">
-              <span className="text-sm font-medium text-foreground">Enable prompt caching</span>
+              <span className="text-sm font-medium text-foreground">
+                Enable prompt caching
+              </span>
               <span className="block text-xs text-muted-foreground/60 mt-0.5">
-                Cache the system prompt and tool definitions across requests. Reduces cost and latency
-                {provider === "bedrock" && " on supported Bedrock regions and models"}.
+                Cache the system prompt and tool definitions across requests.
+                Reduces cost and latency
+                {provider === "bedrock" &&
+                  " on supported Bedrock regions and models"}
+                .
               </span>
             </span>
           </label>
@@ -577,20 +844,24 @@ export function ModelSection() {
       {/* Shared verification status + Verify button (Bedrock and openai-compatible
           get an explicit button since there's no single field to blur off of). */}
       <div className="space-y-2">
-        {(provider === "bedrock" || provider === "openai-compatible") && (
+        {(provider === "bedrock" ||
+          (provider === "openai-compatible" && !merchantMode)) && (
           <button
             type="button"
             onClick={runKeyTest}
-            disabled={keyStatus.state === "testing" || (provider === "openai-compatible" && !customUrl.trim())}
+            disabled={
+              keyStatus.state === "testing" ||
+              (provider === "openai-compatible" && !customUrl.trim())
+            }
             className="text-sm px-4 py-2 rounded-lg border border-border
                        hover:bg-muted/50 transition-colors disabled:opacity-40"
           >
-            {keyStatus.state === "testing" ? "Verifying…" : "Verify connection"}
+            {keyStatus.state === "testing" ? "正在验证…" : "验证连接"}
           </button>
         )}
         {keyStatus.state === "testing" && (
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Loader2 className="w-3 h-3 animate-spin" /> Verifying…
+            <Loader2 className="w-3 h-3 animate-spin" /> 正在验证…
           </p>
         )}
         {keyStatus.state === "ok" && (
@@ -619,9 +890,19 @@ export function ModelSection() {
                    bg-primary text-primary-foreground hover:bg-primary/90
                    transition-colors disabled:opacity-40"
       >
-        {saveStatus === "saving" && <Loader2 className="w-4 h-4 animate-spin" />}
-        {saveStatus === "saved"  && <Check  className="w-4 h-4" strokeWidth={3} />}
-        {saveStatus === "saved" ? "Saved!" : "Save"}
+        {saveStatus === "saving" && (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        )}
+        {saveStatus === "saved" && (
+          <Check className="w-4 h-4" strokeWidth={3} />
+        )}
+        {saveStatus === "saved"
+          ? merchantMode
+            ? "已保存，可开始复盘"
+            : "已保存"
+          : merchantMode
+            ? "验证并保存"
+            : "保存配置"}
       </button>
     </div>
   );

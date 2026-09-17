@@ -13,7 +13,7 @@ interface DisplayState {
 const GREETING_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 export const useDisplayStore = create<DisplayState>((set) => ({
-  appName: "Analytics Agent",
+  appName: "Campaign Intelligence",
   logoUrl: "",
   greeting: "",
   userName: "",

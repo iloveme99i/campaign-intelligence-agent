@@ -5,7 +5,8 @@
  *
  * The fix (chat.py + ChatView.tsx):
  *   - Backend: agent runs in asyncio.create_task (ConvStream), not cancelled on
- *     HTTP disconnect. Each event committed immediately so DB is always up to date.
+ *     HTTP disconnect. Live chunks stay in replay memory; durable tool evidence,
+ *     usage and the canonical COMPLETE answer are committed to the DB.
  *   - Frontend: GET /conversations/{id}/stream reattaches to the replay buffer +
  *     live tail when getConversation returns is_streaming=true.
  */

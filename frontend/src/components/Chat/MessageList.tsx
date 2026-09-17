@@ -105,7 +105,7 @@ export function MessageList({
   if (messages.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
-        Ask a question about your data
+        输入复盘问题，继续追查指标或证据
       </div>
     );
   }

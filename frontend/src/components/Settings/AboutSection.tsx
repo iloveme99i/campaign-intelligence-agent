@@ -1,261 +1,71 @@
 import { useEffect, useState } from "react";
-import { ExternalLink, RefreshCw, Tag, ArrowUpCircle, ChevronDown } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import { getVersionInfo, getReleases, type VersionInfo, type Release } from "@/api/settings";
+import { ExternalLink, GitBranch, ShieldCheck, Tag } from "lucide-react";
+import { getVersionInfo, type VersionInfo } from "@/api/settings";
 
-const GITHUB_RELEASES_URL =
-  "https://github.com/datahub-project/analytics-agent/releases";
-
-function formatDate(iso: string): string {
-  if (!iso) return "";
-  try {
-    return new Date(iso).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  } catch {
-    return iso;
-  }
-}
+const UPSTREAM_URL = "https://github.com/datahub-project/analytics-agent";
 
 export function AboutSection() {
   const [versionInfo, setVersionInfo] = useState<VersionInfo | null>(null);
-  const [releases, setReleases] = useState<Release[]>([]);
-  const [loadingVersion, setLoadingVersion] = useState(true);
-  const [loadingReleases, setLoadingReleases] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const load = async () => {
-    setLoadingVersion(true);
-    setLoadingReleases(true);
-    const [v, r] = await Promise.all([getVersionInfo(), getReleases()]);
-    setVersionInfo(v);
-    setReleases(r);
-    setLoadingVersion(false);
-    setLoadingReleases(false);
-  };
 
   useEffect(() => {
-    load();
+    getVersionInfo().then(setVersionInfo).catch(() => {});
   }, []);
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await load();
-    setRefreshing(false);
-  };
-
   return (
-    <div className="space-y-6">
-      {/* Version card */}
-      <div className="border border-border rounded-lg p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium">Version</h3>
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors disabled:opacity-50"
-            title="Check for updates"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
-          </button>
-        </div>
-
-        {loadingVersion ? (
-          <div className="text-xs text-muted-foreground animate-pulse">Checking version…</div>
-        ) : (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-muted-foreground w-28 flex-shrink-0">Installed</span>
-              <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-xs">
-                {versionInfo?.current_version ?? "unknown"}
-              </code>
-            </div>
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-muted-foreground w-28 flex-shrink-0">Latest release</span>
-              {versionInfo?.latest_version ? (
-                <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-xs">
-                  {versionInfo.latest_version}
-                </code>
-              ) : (
-                <span className="text-muted-foreground text-xs italic">unavailable</span>
-              )}
-            </div>
-
-            {versionInfo?.update_available && (
-              <div className="space-y-2 pt-2">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
-                    <ArrowUpCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                    A newer version is available
-                  </span>
-                  <a
-                    href={GITHUB_RELEASES_URL}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs border border-amber-500/40
-                               text-amber-600 dark:text-amber-400 rounded-md px-3 py-1.5
-                               hover:bg-amber-500/10 transition-colors flex-shrink-0"
-                  >
-                    <ArrowUpCircle className="w-3 h-3" />
-                    Release notes
-                  </a>
-                </div>
-                <div className="bg-muted rounded px-3 py-2 font-mono text-xs text-muted-foreground select-all">
-                  analytics-agent upgrade
-                </div>
-              </div>
-            )}
-
-            {versionInfo && !versionInfo.update_available && versionInfo.latest_version && (
-              <div className="flex items-center gap-1.5 pt-1">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
-                <span className="text-xs text-emerald-600 dark:text-emerald-400">
-                  You&apos;re up to date
-                </span>
-              </div>
-            )}
+    <div className="space-y-5">
+      <section className="rounded-lg border border-border p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              Product build
+            </p>
+            <h3 className="mt-1 text-base font-semibold">Campaign Intelligence</h3>
+            <p className="mt-1 max-w-md text-xs leading-5 text-muted-foreground">
+              面向活动经营决策的证据约束分析 Agent。当前为本地构建，不与上游项目版本做自动比较。
+            </p>
           </div>
-        )}
-      </div>
-
-      {/* Changelog */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium">Changelog</h3>
-          <a
-            href={GITHUB_RELEASES_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            All releases
-            <ExternalLink className="w-3 h-3" />
-          </a>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-1 font-mono text-xs">
+            <Tag className="h-3 w-3" />
+            v{versionInfo?.current_version ?? "—"}
+          </span>
         </div>
+      </section>
 
-        {loadingReleases ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="border border-border rounded-lg p-4 animate-pulse space-y-2">
-                <div className="h-3 bg-muted rounded w-24" />
-                <div className="h-2 bg-muted rounded w-48" />
-              </div>
-            ))}
-          </div>
-        ) : releases.length === 0 ? (
-          <div className="text-xs text-muted-foreground italic">
-            Could not load release notes. Check your network connection or{" "}
-            <a
-              href={GITHUB_RELEASES_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="underline hover:no-underline"
-            >
-              view on GitHub
-            </a>
-            .
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {releases.map((release) => (
-              <ReleaseCard
-                key={release.tag_name}
-                release={release}
-                isInstalled={
-                  !!versionInfo &&
-                  release.tag_name.replace(/^v/, "") === versionInfo.current_version
-                }
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ReleaseCard({
-  release,
-  isInstalled,
-}: {
-  release: Release;
-  isInstalled: boolean;
-}) {
-  const [expanded, setExpanded] = useState(isInstalled);
-  const hasBody = Boolean(release.body);
-
-  return (
-    <div
-      className={`border rounded-lg overflow-hidden ${
-        isInstalled ? "border-primary/60 bg-primary/10" : "border-border"
-      }`}
-    >
-      <button
-        onClick={() => setExpanded((v) => !v)}
-        aria-expanded={expanded}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/40 transition-colors text-left gap-2"
-      >
-        <div className="flex items-center gap-2 min-w-0">
-          <Tag className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-          <span className="text-sm font-medium font-mono truncate">{release.name}</span>
-          {isInstalled && (
-            <span className="text-xs bg-primary/15 text-primary px-1.5 py-0.5 rounded font-medium flex-shrink-0">
-              installed
-            </span>
-          )}
-          {release.prerelease && (
-            <span className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded font-medium flex-shrink-0">
-              pre-release
-            </span>
-          )}
+      <section className="rounded-lg border border-border p-4">
+        <div className="flex items-center gap-2">
+          <GitBranch className="h-4 w-4 text-primary" />
+          <h3 className="text-sm font-semibold">代码来源与产品边界</h3>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-xs text-muted-foreground">{formatDate(release.published_at)}</span>
-          <a
-            href={release.html_url}
-            target="_blank"
-            rel="noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-            title="View on GitHub"
-          >
-            <ExternalLink className="w-3 h-3" />
-          </a>
-          <ChevronDown
-            className={`w-3.5 h-3.5 text-muted-foreground transition-transform duration-200 ${
-              expanded ? "rotate-180" : ""
-            }`}
-          />
-        </div>
-      </button>
+        <dl className="mt-4 grid gap-3 text-xs sm:grid-cols-[8rem_1fr]">
+          <dt className="text-muted-foreground">开源基座</dt>
+          <dd>DataHub Analytics Agent</dd>
+          <dt className="text-muted-foreground">许可证</dt>
+          <dd>Apache License 2.0</dd>
+          <dt className="text-muted-foreground">本产品新增</dt>
+          <dd className="leading-5">
+            商家数据契约、确定性指标核算、任务驱动诊断、证据编号、38 项质量门禁、人工决策、实验规划与执行结果回传。
+          </dd>
+        </dl>
+        <a
+          href={UPSTREAM_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-4 inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+        >
+          查看开源基座
+          <ExternalLink className="h-3 w-3" />
+        </a>
+      </section>
 
-      {/* CSS grid-rows transition — animates open/close without JS height measurement */}
-      <div
-        className="grid transition-[grid-template-rows] duration-200"
-        style={{ gridTemplateRows: expanded ? "1fr" : "0fr" }}
-      >
-        <div className="overflow-hidden">
-          <div className="border-t border-border/60 px-4 pb-4 pt-3">
-            {hasBody ? (
-              <div className="prose prose-sm dark:prose-invert max-w-none text-xs leading-relaxed
-                              [&_h1]:text-sm [&_h2]:text-sm [&_h3]:text-xs [&_h4]:text-xs
-                              [&_h1]:font-semibold [&_h2]:font-semibold [&_h3]:font-semibold
-                              [&_h1]:mt-3 [&_h2]:mt-3 [&_h3]:mt-2
-                              [&_ul]:pl-4 [&_ol]:pl-4 [&_li]:my-0.5
-                              [&_a]:text-primary [&_a]:no-underline [&_a:hover]:underline
-                              [&_code]:bg-muted [&_code]:px-1 [&_code]:rounded [&_code]:text-xs [&_code]:font-mono
-                              [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded [&_pre]:overflow-x-auto">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{release.body}</ReactMarkdown>
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground italic">No release notes provided.</p>
-            )}
-          </div>
+      <section className="rounded-lg border border-border bg-muted/25 p-4">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="h-4 w-4 text-emerald-700" />
+          <h3 className="text-sm font-semibold">当前能力声明</h3>
         </div>
-      </div>
+        <p className="mt-2 text-xs leading-5 text-muted-foreground">
+          本地快照只读分析；合成案例用于功能与评测验证，不代表真实商家上线效果。观察性前后对比不被描述为因果增量。
+        </p>
+      </section>
     </div>
   );
 }

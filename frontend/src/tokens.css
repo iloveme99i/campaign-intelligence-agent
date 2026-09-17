@@ -1,0 +1,26 @@
+/* Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 · genre: modern-minimal · macrostructure: evidence-dossier · theme: Cobalt · enrichment: none · nav: N3 · footer: none · contrast: pass (40–41) · honest: pass (46) · chrome: pass (47) · responsive: pass (34,49–57) */
+:root, [data-theme="datahub"] {
+  --background: 216 33% 97%; --foreground: 222 47% 11%;
+  --muted: 216 29% 94%; --muted-foreground: 215 16% 42%; --border: 216 22% 87%;
+  --primary: 222 84% 50%; --primary-foreground: 0 0% 100%;
+  --secondary: 219 55% 92%; --secondary-foreground: 222 64% 29%;
+  --quality-good: 158 64% 30%; --quality-fair: 34 92% 38%; --quality-poor: 0 68% 47%;
+  --radius: 0.625rem; --surface: 0 0% 100%; --surface-raised: 0 0% 100%;
+  --duration-fast: 140ms; --duration-base: 200ms; --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --shadow-float: 0 18px 50px -30px hsl(222 47% 11% / 0.35);
+}
+[data-theme="warm"] {
+  --background: 38 32% 96%; --foreground: 24 24% 14%; --muted: 35 22% 91%; --muted-foreground: 25 11% 40%; --border: 32 18% 84%;
+  --primary: 22 78% 42%; --primary-foreground: 0 0% 100%; --secondary: 34 35% 87%; --secondary-foreground: 24 33% 25%;
+  --quality-good: 152 52% 31%; --quality-fair: 30 88% 38%; --quality-poor: 0 68% 44%; --radius: 0.625rem; --surface: 40 36% 99%; --surface-raised: 40 36% 99%;
+}
+[data-theme="carbon"] {
+  --background: 222 18% 10%; --foreground: 210 20% 94%; --muted: 220 14% 16%; --muted-foreground: 215 10% 64%; --border: 218 12% 24%;
+  --primary: 216 92% 67%; --primary-foreground: 222 24% 10%; --secondary: 220 16% 19%; --secondary-foreground: 210 20% 91%;
+  --quality-good: 152 48% 55%; --quality-fair: 35 80% 58%; --quality-poor: 0 70% 62%; --radius: 0.5rem; --surface: 222 16% 12%; --surface-raised: 220 15% 15%;
+}
+[data-theme="ocean"] {
+  --background: 220 30% 8%; --foreground: 210 30% 94%; --muted: 218 24% 13%; --muted-foreground: 214 13% 65%; --border: 216 17% 23%;
+  --primary: 211 100% 68%; --primary-foreground: 220 34% 9%; --secondary: 215 25% 17%; --secondary-foreground: 210 24% 90%;
+  --quality-good: 152 52% 55%; --quality-fair: 35 82% 58%; --quality-poor: 0 68% 62%; --radius: 0.625rem; --surface: 220 27% 10%; --surface-raised: 218 24% 13%;
+}

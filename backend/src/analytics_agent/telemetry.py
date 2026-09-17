@@ -199,11 +199,11 @@ class TelemetryClient:
         # project — it lets dashboards filter analytics-agent events with a single
         # predicate without relying on event name patterns.
         try:
-            version = importlib.metadata.version("datahub-analytics-agent")
+            version = importlib.metadata.version("campaign-intelligence")
         except Exception:
             version = "unknown"
         self._global_props = {
-            "source": "analytics-agent",
+            "source": "campaign-intelligence",
             "deployment_id": self.client_id,
             "analytics_agent_version": version,
             "python_version": platform.python_version(),

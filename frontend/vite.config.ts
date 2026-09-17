@@ -1,12 +1,13 @@
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
-import path from "path";
+
+const sourceDirectory = decodeURIComponent(new URL("./src", import.meta.url).pathname);
 
 export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": sourceDirectory,
     },
   },
   server: {
@@ -21,10 +22,5 @@ export default defineConfig({
   test: {
     environment: "node",
     globals: true,
-    resolve: {
-      alias: {
-        "@": path.resolve(__dirname, "./src"),
-      },
-    },
   },
 });

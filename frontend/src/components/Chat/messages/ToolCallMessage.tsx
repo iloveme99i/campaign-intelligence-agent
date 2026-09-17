@@ -12,6 +12,28 @@ interface ToolResultProps {
 
 export function ToolCallMessage({ payload }: ToolCallProps) {
   const [open, setOpen] = useState(false);
+  const dimensionLabels: Record<string, string> = {
+    variant: "实验组",
+    channel: "渠道",
+    location_id: "经营点",
+    audience: "目标人群",
+  };
+  const dimension =
+    typeof payload.tool_input.dimension === "string"
+      ? dimensionLabels[payload.tool_input.dimension] ?? payload.tool_input.dimension
+      : null;
+  const reason =
+    typeof payload.tool_input.reason === "string"
+      ? payload.tool_input.reason
+      : null;
+  const title =
+    payload.tool_name === "compare_periods"
+      ? "核对活动总盘"
+      : payload.tool_name === "diagnose_dimension" && dimension
+        ? `下钻${dimension}`
+        : payload.tool_name === "execute_sql"
+          ? "查询证据"
+          : "读取分析资料";
 
   return (
     <div className="max-w-[90%]">
@@ -20,7 +42,8 @@ export function ToolCallMessage({ payload }: ToolCallProps) {
         className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
       >
         <Wrench className="w-3.5 h-3.5" />
-        <span className="font-mono">{payload.tool_name}</span>
+        <span className="font-medium">{title}</span>
+        {reason && <span className="truncate opacity-70">· {reason}</span>}
         {open ? (
           <ChevronDown className="w-3 h-3" />
         ) : (

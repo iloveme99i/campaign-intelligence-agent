@@ -382,7 +382,10 @@ def create_app() -> FastAPI:
     from analytics_agent._version import get_package_version
 
     app = FastAPI(
-        title="DataHub Talk to Data",
+        title="Campaign Intelligence API",
+        description=(
+            "Evidence-bound campaign review, experiment planning, and decision follow-up."
+        ),
         version=get_package_version(),
         lifespan=lifespan,
     )

@@ -112,7 +112,7 @@ async def stream_graph_events(
             # ── TOOL_CALL ──
             elif event_type == "on_tool_start":
                 tool_input = data.get("input", {})
-                if name == "execute_sql":
+                if name in ("execute_sql", "compare_periods", "diagnose_dimension"):
                     pending_sql[run_id] = tool_input.get("sql", "")
                 # create_chart renders as a CHART event — don't show a tool call bubble
                 if name == "create_chart":
@@ -121,7 +121,7 @@ async def stream_graph_events(
                     "event": "TOOL_CALL",
                     "conversation_id": conversation_id,
                     "message_id": str(uuid.uuid4()),
-                    "payload": {"tool_name": name, "tool_input": tool_input},
+                    "payload": {"tool_name": name, "tool_input": tool_input, "tool_run_id": run_id},
                 }
 
             # ── TOOL_ERROR (unhandled exception from tool) ──
@@ -133,6 +133,7 @@ async def stream_graph_events(
                     "message_id": str(uuid.uuid4()),
                     "payload": {
                         "tool_name": name,
+                        "tool_run_id": run_id,
                         "result": error_msg,
                         "is_error": True,
                     },
@@ -155,7 +156,7 @@ async def stream_graph_events(
                     output = output[0]["text"]
                 output_str = output if isinstance(output, str) else orjson.dumps(output).decode()
 
-                if name == "execute_sql":
+                if name in ("execute_sql", "compare_periods", "diagnose_dimension"):
                     sql_text = pending_sql.pop(run_id, "")
                     try:
                         result = orjson.loads(output_str)
@@ -166,6 +167,18 @@ async def stream_graph_events(
                                 "message_id": str(uuid.uuid4()),
                                 "payload": {
                                     "tool_name": name,
+                                    "tool_run_id": run_id,
+                                    "sql": result.get("sql", sql_text),
+                                    **{
+                                        k: result[k]
+                                        for k in (
+                                            "evidence_id",
+                                            "snapshot_id",
+                                            "metric_version",
+                                            "elapsed_ms",
+                                        )
+                                        if k in result
+                                    },
                                     "result": result["error"],
                                     "is_error": True,
                                 },
@@ -176,7 +189,36 @@ async def stream_graph_events(
                                 "conversation_id": conversation_id,
                                 "message_id": str(uuid.uuid4()),
                                 "payload": {
-                                    "sql": sql_text,
+                                    "sql": result.get("sql", sql_text),
+                                    "tool_name": name,
+                                    **{
+                                        k: result[k]
+                                        for k in (
+                                            "scope_id",
+                                            "scope",
+                                            "warnings",
+                                            "parameters",
+                                            "diagnostic_dimension",
+                                            "diagnostic_reason",
+                                            "related_evidence_ids",
+                                            "evidence_manifest",
+                                            "experiment",
+                                            "costs",
+                                            "cost_boundary",
+                                        )
+                                        if k in result
+                                    },
+                                    "tool_run_id": run_id,
+                                    **{
+                                        k: result[k]
+                                        for k in (
+                                            "evidence_id",
+                                            "snapshot_id",
+                                            "metric_version",
+                                            "elapsed_ms",
+                                        )
+                                        if k in result
+                                    },
                                     "columns": result.get("columns", []),
                                     "rows": result.get("rows", []),
                                     "truncated": result.get("truncated", False),
@@ -190,6 +232,7 @@ async def stream_graph_events(
                             "payload": {
                                 "tool_name": name,
                                 "result": output_str[:2000],
+                                "tool_run_id": run_id,
                                 "is_error": True,
                             },
                         }
@@ -227,6 +270,7 @@ async def stream_graph_events(
                         "payload": {
                             "tool_name": name,
                             "result": result_text,
+                            "tool_run_id": run_id,
                             "is_error": is_error,
                         },
                     }

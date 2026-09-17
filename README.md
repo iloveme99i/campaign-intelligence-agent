@@ -1,449 +1,169 @@
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="frontend/public/analytics-agent-logo-dark-bg.svg">
-    <source media="(prefers-color-scheme: light)" srcset="frontend/public/analytics-agent-logo-color.svg">
-    <img alt="Analytics Agent" src="frontend/public/analytics-agent-logo-color.svg" width="220">
-  </picture>
-</p>
+# Campaign Intelligence
 
-<p align="center">
-  <strong>Natural-language data queries, powered by DataHub + LangGraph</strong><br>
-  Ask a question. Get SQL, results, and a chart — in one turn.
-</p>
+[![Campaign Intelligence CI](https://github.com/iloveme99i/campaign-intelligence-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/iloveme99i/campaign-intelligence-agent/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-Apache--2.0-4b5563.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-2563eb.svg)](pyproject.toml)
+[![React](https://img.shields.io/badge/React-19-0f766e.svg)](frontend/package.json)
 
-<p align="center">
-  <img src="https://img.shields.io/badge/python-3.11+-blue?logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white" alt="FastAPI">
-  <img src="https://img.shields.io/badge/LangGraph-0.2+-orange" alt="LangGraph">
-  <img src="https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=black" alt="React">
-  <img src="https://img.shields.io/badge/DataHub-context%20layer-0052cc" alt="DataHub">
-</p>
+面向零售及本地生活运营人员的营销活动复盘 Agent。核算活动目标、转化路径和投入成本，根据异常选择渠道、人群或经营点深入分析，解决统计口径不统一、异常难定位、结论难复查的问题。
 
-<p align="center">
-  <img src="docs/screenshot-chat.png" alt="Analytics Agent chat with chart and context quality bar" width="900">
-</p>
+当前项目是本地单用户版本，数据和示例均不代表真实业务收益。
 
-<p align="center">
-  <img src="docs/screenshot-welcome.png" alt="Analytics Agent welcome screen with conversation history" width="900">
-</p>
+## 产品演示
 
-Analytics Agent connects to your data warehouse and answers questions in plain English — writing SQL, running it, and rendering charts automatically. Connect it to [DataHub](https://datahub.com) and it gains real knowledge of your tables, columns, and business definitions, so it writes better SQL and can explain what it found in terms your team already uses. DataHub is optional — the agent works without it, just with less context.
+以下为实际应用截图，业务数据全部合成，诊断来自已保存的模型运行记录。
 
----
+![活动核算和Agent诊断](docs/demo/diagnostic-result.png)
 
-## ⚡ Quickstart
+<details><summary>任务配置和执行检查</summary>
 
-### Option A — pip / uvx (recommended, no Docker needed)
+![配置复盘任务](docs/demo/task-setup.png)
+![检查执行过程](docs/demo/trace-checks.png)
 
-> Requires Python 3.11+
+</details>
 
-```bash
-# Install and launch — no git clone, no repo, no Docker
-pip install datahub-analytics-agent
-analytics-agent quickstart
+## 核心功能
 
-# Or with uv (no virtualenv management):
-uvx datahub-analytics-agent quickstart
+- 统一计算活动目标、顺序转化路径、两期经营结果和投入成本。
+- 根据任务和中间结果选择分析方向，记录为什么调用该诊断工具。
+- 按渠道、人群、经营点和活动版本查看差异，关键数字可回查查询结果。
+- 选择实验对象和主指标后测算样本量、预计周期；不把观察性差异当作随机实验效果。
+
+## 产品流程和Agent架构
+
+```mermaid
+flowchart TD
+  A[导入CSV并校验] --> B[用户确认任务和统计范围]
+  B --> C[工具核算目标、路径、成本和分层读数]
+  C --> D[Agent判断是否需要进一步诊断]
+  D -->|需要复核| E[选择维度并记录调查理由]
+  E --> F[只读查询并保存证据]
+  F --> D
+  D -->|证据足够或查询预算到限| G[形成事实、解释假设和调整建议]
+  G --> H[检查数字、范围、路径解释和因果表述]
+  H -->|失败| I[返回错误项和计算结果重写，最多两次]
+  I --> H
+  H -->|仍失败| J[提示复核，不能采纳为执行决定]
+  H -->|通过| K[用户复核并选择实验对象]
+  K --> L[工具测算样本量和周期]
 ```
 
-This starts the server at **http://localhost:8100** and opens the browser, where a setup wizard walks you through choosing a model and entering your API key. Config and the database are stored in `~/.datahub/analytics-agent/`.
+LangGraph工具调用基础继承自上游；本项目增加活动核算、范围绑定、诊断选择和质量检查逻辑。工具报错记录为失败事件，不当作计算结果引用。每次查询保存数据快照、指标版本、SQL和参数。口径修改后重新计算，历史记录保留但不能直接用于新范围。
 
-Re-running `analytics-agent quickstart` restarts the server without any prompts. To re-open the setup wizard, use `analytics-agent quickstart --reconfigure`.
+## 评测和错误修复
 
-**Other server commands:**
+54条开发场景覆盖决策目标、风险重点、筛选范围和不同活动机制；41项自动检查覆盖调用顺序、参数、数字引用、路径解释和因果边界。它们不是线上用户数量或专家事实正确率。
 
-```bash
-analytics-agent start    # start from existing config (no wizard)
-analytics-agent stop     # stop the running server
-analytics-agent status   # show whether server is running + URL
-analytics-agent logs     # tail ~/.datahub/analytics-agent/logs/agent.log
-analytics-agent config   # open config dir in $EDITOR or print its path
+金额转录、漏斗误读、共享费用归属三类案例详见[问题及修复记录](docs/product/07-reviewer-guide.md)。[最新6条代表场景记录](evals/representative-suite-run-2026-09-16-v8.json)通过当轮检查，历史失败也保留在仓库，不据此宣称稳定通过率。
+
+## 快速体验
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/iloveme99i/campaign-intelligence-agent?quickstart=1)
+
+提供 Codespaces 配置，初始化后自动启动8101端口（需要GitHub登录，云端初始化尚未验收）。点击“载入案例”导入合成数据。生成实时Agent记录需要在设置页填写自己的OpenAI-compatible API Key；没有Key时可先浏览上方真实截图和评测记录。项目不会把Key写入仓库。
+
+不使用 Codespaces 时，可按下方“本地运行”在自己的电脑启动。当前没有托管生产服务，避免把个人模型密钥暴露在公共站点，也不把预先写好的静态页面冒充实时 Agent。
+
+## 一次完整复盘
+
+1. 导入活动配置、匿名行为事件、交易结果和活动成本四份必需 CSV；有稳定同期经营单元时可另加一份增量面板。
+2. 先定义要支持的经营决策与优先风险，生成可追踪的 `task_id`，不让 Agent 在不明确任务时自由发挥。
+3. 选择活动，确认活动期、等长对比期、人群、渠道、经营点和退款口径。
+4. 系统先用受限只读查询确定性计算目标结果、漏斗、实验差异与活动成本。
+5. 系统先扫描两期走势与实验组、渠道、经营点和人群，Agent 再结合决策任务和业务限制选择最多三项必要的定向复核；每次诊断记录业务理由、独立证据与查询口径。
+6. Agent 在证据足够时停止扩展查询，将事实、解释假设、待验证项和下一轮停止/继续条件分层输出。
+7. 使用者明确选择下一轮实验对象、具体分组与主指标，系统用该群体的已保存证据计算每组样本量和预计周期；MDE 与实验流量由使用者确认，随机化、SRM、串组和贡献额护栏仍作为上线前检查项。
+8. 负责人确认行动后，系统将复查日期与当前 `scope_id`、回答摘要绑定；口径变更不会覆盖旧记录。
+
+## 为什么这里需要 Agent
+
+固定报表能展示指标，但真实复盘的追查路径会随结果变化：目标未达成时先拆路径，路径改善但贡献下降时转向优惠和投放成本，实验组差异明显时还要检查样本与因果边界。Agent 负责选择下一步查询和组织判断；金额、用户数、转化率等事实不交给模型心算。
+
+```text
+复盘口径
+   │
+   ├── 只读快照 + 参数化查询 ──> 目标 / 路径 / 实验 / 成本证据
+   │                                  │
+   └──────────────────────────────> Agent 解释与追查
+                                      │
+                                      └── 事实 / 假设 / 待验证项
 ```
 
-### Option B — Docker + sample data (full demo)
-
-> **Requires:** Docker, DataHub CLI (`pip install acryl-datahub`), `uv`, Python 3.11+
-
-```bash
-git clone https://github.com/datahub-project/analytics-agent.git
-cd analytics-agent
-bash quickstart.sh
-```
-
-The script starts a local DataHub instance, loads the Fiction Retail sample dataset and catalog metadata, then builds and launches Analytics Agent at **http://localhost:8100**. Postgres data is persisted to `~/.datahub/analytics-agent/postgres-data/` so it survives container restarts.
-
-**Using AWS Bedrock?** Export `LLM_PROVIDER=bedrock` before running the script. The script will verify your AWS credentials and Bedrock access before starting the container, and mount `~/.aws` read-only so boto3 picks up your profiles and SSO cache automatically.
-
----
-
-## What it does
-
-| | |
-|---|---|
-| **Context Quality** | A live status bar scores how well your DataHub catalog supported the agent (1–5). Hover for the LLM's reasoning. The score improves as you document your data. |
-| **`/improve-context`** | Type `/improve-context` after any conversation to get a numbered list of documentation improvements the agent wishes it had — then approve and publish them to DataHub in one click. |
-| **Plain-English → SQL → Chart** | Ask "top 5 categories by revenue" — the agent writes SQL, runs it, and auto-renders a Vega-Lite chart, all in one turn. |
-| **Multi-turn memory** | Follow-ups like "make it a pie chart" or "filter to Q3" work across turns. |
-| **Collapsible reasoning** | Tool calls and agent thinking are shown but collapsed — visible when you want them, out of the way when you don't. |
-| **Multiple connections** | Add and manage Snowflake, BigQuery, PostgreSQL, MySQL, and other SQLAlchemy-compatible databases from Settings. Each has its own encrypted credentials. |
-| **Light and dark themes** | Four built-in themes with a switcher in the bottom-left corner. |
-
----
-
-## Manual setup (for contributors / development)
-
-> This section is for hacking on the agent itself. For everyday use, `analytics-agent quickstart` is simpler.
-
-**Prerequisites:** [`uv`](https://docs.astral.sh/uv/getting-started/installation/), [`mise`](https://mise.jdx.dev/getting-started.html) (manages Node + pnpm), Python 3.11+
-
-### 1. Clone and install
-
-```bash
-git clone https://github.com/datahub-project/analytics-agent.git
-cd analytics-agent
-mise install       # installs Node 22 + pnpm (reads .mise.toml)
-make install       # uv sync + pnpm install
-make start         # builds frontend, starts backend at :8100
-```
-
-Open **http://localhost:8100** — a setup wizard handles the LLM key and connections on first run.
-
-> **Without `make`:** `uv sync && cd frontend && pnpm install && pnpm build && cd .. && uv run uvicorn analytics_agent.main:app --port 8100`
-
-### First-time setup
-
-Before the first `uvicorn` start (or after pulling a release that adds migrations), run:
-
-```bash
-uv run analytics-agent bootstrap
-```
-
-This applies Alembic migrations, seeds engines and context platforms from `config.yaml`, and writes first-run setting defaults. The command is idempotent — re-running it on an up-to-date database is a no-op.
-
-For Kubernetes deployments, the Helm chart runs `analytics-agent bootstrap` automatically as a `pre-install`/`pre-upgrade` hook (see `helm/analytics-agent/README.md`).
-
-### Optional: pre-configure via `.env`
-
-```bash
-cp .env.example .env   # then edit as needed
-```
-
-```bash
-# LLM — pick one provider (or leave blank and use the wizard)
-LLM_PROVIDER=anthropic
-ANTHROPIC_API_KEY=sk-ant-...
-
-# DataHub (optional — can also be added via Settings → Connections)
-DATAHUB_GMS_URL=https://your-instance.acryl.io/gms
-DATAHUB_GMS_TOKEN=eyJhbGci...
-```
-
-### Useful make targets
-
-| Command | What it does |
-|---|---|
-| `make start` | Build frontend if stale, start backend |
-| `make start-remote` | Start + show DataHub connection status |
-| `make nuke` | Wipe the DB and start from scratch |
-| `make dev` | Hot-reload backend (use `make dev-full` for frontend HMR too) |
-| `make logs` | Tail backend logs |
-
-### Development mode (hot reload)
-
-```bash
-# Terminal 1 — backend (dev)
-uv run uvicorn analytics_agent.main:app --reload --port 8101
-
-# Terminal 2 — frontend HMR (http://localhost:5173, proxies /api/* to :8101)
-cd frontend && pnpm dev
-```
-
----
-
-## Connect DataHub
-
-```bash
-# DataHub Cloud (Acryl)
-datahub init --sso --host https://your-instance.acryl.io/gms --token-duration ONE_MONTH
-
-# Self-hosted
-datahub init --host http://localhost:8080 --username datahub --password datahub
-
-# Verify the connection
-curl -s -X POST http://localhost:8100/api/settings/connections/datahub/test
-```
-
----
-
-## Connect Snowflake
-
-### Option A — Service account via `config.yaml` (recommended)
-
-```yaml
-# config.yaml
-engines:
-  - type: snowflake
-    name: snowflake
-    connection:
-      account: "${SNOWFLAKE_ACCOUNT}"
-      warehouse: "${SNOWFLAKE_WAREHOUSE}"
-      database: "${SNOWFLAKE_DATABASE}"
-      schema: "${SNOWFLAKE_SCHEMA}"
-      user: "${SNOWFLAKE_USER}"
-```
-
-### Option B — Key-pair auth
-
-Generate an RSA key pair, upload the public key to Snowflake, then set `SNOWFLAKE_PRIVATE_KEY` (base64-encoded PEM) in `.env`.
-
-### Option C — Personal SSO (Settings UI)
-
-**Settings → Connections → Authentication → SSO** — opens a browser window for your IdP.
-
----
-
-## Connect BigQuery
-
-BigQuery authenticates exclusively via a GCP **service account**. Three credential formats are supported — use whichever fits your deployment:
-
-### Option A — JSON key via environment variable (recommended for containers)
-
-Export the raw service-account JSON (single line, no newlines):
-
-```bash
-export BIGQUERY_CREDENTIALS_JSON='{"type":"service_account","project_id":"my-project",...}'
-```
-
-Or add it to `.env`:
-
-```bash
-BIGQUERY_CREDENTIALS_JSON={"type":"service_account","project_id":"my-project",...}
-```
-
-Then reference the project in `config.yaml`:
-
-```yaml
-# config.yaml
-engines:
-  - type: bigquery
-    name: prod
-    connection:
-      project: "${BIGQUERY_PROJECT}"
-      dataset: "${BIGQUERY_DATASET}"   # optional default dataset
-```
-
-### Option B — Base64-encoded JSON key via `config.yaml`
-
-Encode your key file once:
-
-```bash
-base64 -i my-service-account.json | tr -d '\n'
-```
-
-Then paste the output into `config.yaml`:
-
-```yaml
-engines:
-  - type: bigquery
-    name: prod
-    connection:
-      project: my-gcp-project
-      dataset: my_dataset          # optional
-      credentials_base64: "ey..."
-```
-
-### Option C — Path to a JSON key file
-
-Useful for local development or when the key file is mounted into the container:
-
-```yaml
-engines:
-  - type: bigquery
-    name: prod
-    connection:
-      project: my-gcp-project
-      credentials_path: /secrets/sa-key.json
-```
-
-### Required IAM roles
-
-The service account needs at minimum:
-
-| Role | Purpose |
-|---|---|
-| `roles/bigquery.dataViewer` | Read tables and schemas |
-| `roles/bigquery.jobUser` | Run queries |
-
----
-
-## LLM providers
-
-Set `LLM_PROVIDER` to one of the values below, or use the **Settings → Model** wizard in the UI.
-
-| Provider | `LLM_PROVIDER` value | Auth |
+## 关键工程约束
+
+- 快照按输入内容生成 SHA-256 标识，发布后只读。
+- SQL 由业务工具生成并绑定参数；模型不能写库或绕过查询预算。
+- 金额使用整数分。`net_revenue` 不扣平台承担优惠；`contribution` 仍未覆盖租金、人力等全部经营费用，不等于净利润。
+- 行为节点按匿名用户统计；`exposure`、`landing_view`、`offer_claim`、`activation` 分别代表触达、进入、权益领取/任务接受和业务关键行动，均按 `user_key` 去重。
+- 前后周期变化只说明相关变化，不能单独证明活动因果效果。
+- 实验读数提供两比例检验、置信区间和小样本检查；导入数据无法证明随机分流，因此不会把统计差异写成因果结论。
+- 可选同期面板执行平衡面板 DiD，并强制检查稳定构成、前趋势、活动前安慰剂和干扰审查；未通过时只展示诊断，不输出因果增量。
+- 下一轮实验使用当前证据中的基线转化率与日均可实验流量，按固定样本、双侧两比例检验和 50/50 分组确定性测算；默认展示值只是可编辑规划假设，不冒充业务阈值。
+- 合成示例在界面中明确标注为“合成数据”，不用于声明真实效果。
+
+## 数据契约
+
+| 文件 | 必需内容 | 主要用途 |
 |---|---|---|
-| Anthropic (default) | `anthropic` | `ANTHROPIC_API_KEY` |
-| OpenAI | `openai` | `OPENAI_API_KEY` |
-| Google Gemini | `google` | `GOOGLE_API_KEY` |
-| AWS Bedrock | `bedrock` | AWS credential chain |
-| OpenAI-compatible proxy | `openai-compatible` | `OPENAI_COMPATIBLE_BASE_URL` + optional `OPENAI_COMPATIBLE_API_KEY` |
+| `campaigns.csv` | 活动目标、周期、主指标、目标值、归因窗口 | 建立复盘口径 |
+| `events.csv` | 匿名用户、事件时间、节点、实验组、渠道、人群 | 用户路径与实验漏斗 |
+| `orders.csv` | 完成订单、金额、优惠、退款、直接成本 | 经营结果与贡献额 |
+| `costs.csv` | 日期、实验组、渠道、成本类型、金额 | 活动投入核算 |
 
-<details>
-<summary><strong>Anthropic</strong></summary>
+详细字段可从首页下载空白模板；导入器会校验 UTF-8、表头、主外键、日期范围、金额非负、活动曝光唯一性和文件大小。
 
-```bash
-LLM_PROVIDER=anthropic
-ANTHROPIC_API_KEY=sk-ant-...
-```
+## 本地运行
 
-Default models: `claude-sonnet-4-6` (main), `claude-haiku-4-5-20251001` (chart/quality/delight).
-</details>
-
-<details>
-<summary><strong>OpenAI</strong></summary>
+需要 Python 3.11、Node.js 20.19+ 和 pnpm。
 
 ```bash
-LLM_PROVIDER=openai
-OPENAI_API_KEY=sk-...
+git clone https://github.com/iloveme99i/campaign-intelligence-agent.git
+cd campaign-intelligence-agent
+uv sync --extra dev
+cd frontend
+pnpm install
+pnpm build
+cd ..
+./scripts/run-merchant-local.sh
 ```
 
-Default models: `gpt-4o` (main), `gpt-4o-mini` (chart/quality/delight).
-</details>
+打开 `http://127.0.0.1:8101`。首次可选择“打开跨业务合成案例”，其中包含字节系全域大促、腾讯游戏回流任务和腾讯智慧零售私域联动三种公开机制原型；随后在“模型与设置”中选择 `DeepSeek / 兼容 API`，使用 DeepSeek 官方预设，并在本机填写自己的 API Key。密钥加密保存在本地数据库，不要提交到仓库。
 
-<details>
-<summary><strong>Google Gemini</strong></summary>
+## 测试与评测
 
 ```bash
-LLM_PROVIDER=google
-GOOGLE_API_KEY=AIza...
+LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 .venv/bin/python -m pytest tests/merchant -q
+.venv/bin/ruff check backend/src/analytics_agent/merchant tests/merchant
+cd frontend && pnpm test && pnpm build
 ```
 
-Default models: `gemini-2.0-flash` (main), `gemini-1.5-flash` (chart/quality/delight).
-</details>
+`evals/merchant_review_cases.jsonl` 是由脚本生成并校验的 54 场景 Agent 评测矩阵；`scripts/run-merchant-eval-suite.py` 可先免费验证覆盖结构，再显式调用真实模型执行整套用例。每次运行读取持久化 trace，核对工具顺序、诊断方向、必答主题和 41 项质量门。单个会话仍可用 `scripts/score-merchant-trace.py <conversation_id>` 直接评分。
 
-<details>
-<summary><strong>AWS Bedrock</strong></summary>
+已使用项目所有者本机配置的 DeepSeek 官方 API 完成开发验收。失败样本覆盖证据漏引、金额单位、路径语义、伪因果、无条件预测、共享费用错误归属、内部字段泄漏、ATT 估计对象含糊和前趋势检验力过度解读；每次问题都被固化为确定性门禁或回归测试。2026-09-16 的腾讯零售合成案例使用四指标平衡面板 DiD，2 次模型调用、10.706 秒、35,591 tokens，运行时通过当时 39/39 门禁且未触发补写；同一持久化记录按当前代码回放为 41/41。回答明确将 ATT 限定为单个处理经营单元的活动后周期均值效应，并说明 3 个前期的前趋势检验力有限。详见 [`evals/smoke-incrementality-2026-09-16.json`](evals/smoke-incrementality-2026-09-16.json)。它只是一条合成场景单次证据，不是稳定通过率或线上效果。API Key 不写入仓库。
 
-Runs Anthropic models via Bedrock. Auth falls back to the standard AWS credential chain (env vars, `~/.aws/credentials`, IAM role). Set `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` (and optionally `AWS_SESSION_TOKEN`) to override. `AWS_REGION` defaults to `us-west-2`.
+产品决策与深挖材料见 [`docs/product/01-product-brief.md`](docs/product/01-product-brief.md)、[`02-metric-contract.md`](docs/product/02-metric-contract.md)、[`03-agent-design.md`](docs/product/03-agent-design.md)、[`04-evaluation-plan.md`](docs/product/04-evaluation-plan.md)、[`05-build-ownership.md`](docs/product/05-build-ownership.md) 和 [`06-public-scenario-benchmarks.md`](docs/product/06-public-scenario-benchmarks.md)。这些文档明确标出尚未验证的假设，不用虚构访谈或线上效果填充项目故事。
 
-```bash
-LLM_PROVIDER=bedrock
-AWS_REGION=us-west-2
-LLM_MODEL=us.anthropic.claude-sonnet-4-5-20250929-v1:0
-```
-</details>
+## 当前边界
 
-<details>
-<summary><strong>OpenAI-compatible proxy</strong> (LiteLLM, vLLM, Ollama, …)</summary>
+- 单机、单用户；尚未接企业数据仓库与权限系统。
+- 只支持结构化 CSV 快照，不把真实顾客姓名、手机号等个人信息作为输入。
+- 当前 A/B 判断与样本量规划只覆盖二元转化率、固定样本和等比例分组；DiD 只覆盖平衡面板、单元等权 ATT、Welch–Satterthwaite 小样本 t 推断、线性前趋势与活动前安慰剂，尚未覆盖多重检验、序贯检验、聚类稳健标准误、倾向得分匹配和长期留存观察。
+- 真实 DeepSeek 场景仍需扩展到每个用例至少 3 次，并在更多数据规模下建立稳定性、延迟和实际账单成本基线。
 
-Any proxy that speaks the OpenAI chat completions API (`/v1/chat/completions`) works — LiteLLM, vLLM, Ollama, Azure OpenAI custom endpoints, etc. No extra dependencies required.
+## 来源与许可证
 
-```bash
-LLM_PROVIDER=openai-compatible
-OPENAI_COMPATIBLE_BASE_URL=https://litellm.myorg.com/v1   # required
-OPENAI_COMPATIBLE_API_KEY=sk-...                           # optional — omit if proxy uses network-level auth
-LLM_MODEL=llama3.2                                     # model name as the proxy expects it
-```
+这是个人产品实践项目，不涉及模型训练。项目新增范围包括需求定义、复盘流程、领域工具、交互界面和评测；通用基础设施来自下述开源基座。代码实现使用AI辅助，新增模块不等同于全部代码独立手写。具体设计取舍和验证位置见[贡献范围](docs/product/05-build-ownership.md)。
 
-You can also configure the proxy URL and model through **Settings → Model** in the UI.
-</details>
-
-<details>
-<summary><strong>Model tiers</strong> — override individual tiers independently</summary>
-
-| Task | Env var | Purpose |
-|---|---|---|
-| Main analysis agent | `LLM_MODEL` | SQL generation, reasoning |
-| Chart generation | `CHART_LLM_MODEL` | Vega-Lite chart spec |
-| Context quality scoring | `QUALITY_LLM_MODEL` | 1–5 catalog quality score |
-| Titles & greeting | `DELIGHT_LLM_MODEL` | Short text generation |
-
-```bash
-LLM_PROVIDER=anthropic
-LLM_MODEL=claude-opus-4-7           # upgrade just the agent
-QUALITY_LLM_MODEL=claude-sonnet-4-6 # or use a stronger model for quality scoring
-```
-</details>
-
-
----
-
-## Database
-
-The `analytics-agent quickstart` path uses SQLite at `~/.datahub/analytics-agent/data/agent.db`. The Docker quickstart uses Postgres, with data persisted to `~/.datahub/analytics-agent/postgres-data/`. For dev/Helm deployments, set `DATABASE_URL` explicitly — see `.env.example` for Postgres and SQLite formats.
-
----
-
-## Settings UI
-
-**Settings** (top-right) manages:
-- **Connections** — test, edit, add, and delete engine connections
-- **Authentication** — per-connection: Password, Private Key, SSO, PAT, OAuth
-- **Tool toggles** — enable/disable individual DataHub or engine tools
-- **Write-back skills** — `publish_analysis` and `save_correction` (enabled by default)
-- **Prompt** — customize the system prompt
-- **Display** — app name and logo
-
----
-
-## Production
-
-### Docker
-
-```bash
-docker build -f docker/Dockerfile -t analytics-agent .
-docker run -p 8100:8100 --env-file .env analytics-agent
+```text
+backend/src/analytics_agent/merchant/  活动核算、数据契约、证据和评测
+backend/src/analytics_agent/agent/     通用编排及模型调用（含上游能力）
+frontend/src/components/Chat/         复盘界面和诊断结果
+sample_data/                         可重建的合成CSV
+evals/                               开发场景和真实模型回归记录
+docs/product/                        产品说明和设计取舍
+tests/merchant/                      活动领域测试
 ```
 
-### Single process (no Docker)
+项目基于 `datahub-project/analytics-agent` 的 Apache-2.0 代码基线（提交 `466e8ab3db967450db9578c7f649925f96e3de8c`）进行领域重构，保留原许可证与版权声明。商家活动数据契约、只读快照、分析口径、确定性比较工具、证据链、评测门和 Agent 界面为本项目新增或重写部分。
 
-```bash
-cd frontend && pnpm build && cd ..
-uv run uvicorn analytics_agent.main:app --host 0.0.0.0 --port 8100
-```
-
----
-
-## Architecture
-<p align="center">
-  <img src="docs/analytics-agent.png" alt="DataHub architecture diagram" width="900">
-</p>
-
-```
-analytics-agent/
-├── backend/src/analytics_agent/
-│   ├── agent/          # LangGraph ReAct graph, streaming, chart generation, analysis
-│   ├── api/            # FastAPI routes: conversations, chat (SSE), settings, oauth
-│   ├── context/        # DataHub tool loader (datahub_agent_context)
-│   ├── db/             # SQLAlchemy models + Alembic migrations
-│   │   └── models.py   # Conversation, Message, Integration, Setting
-│   ├── engines/        # Pluggable query engines (Snowflake, BigQuery, SQLAlchemy-based)
-│   ├── prompts/        # System prompt (system_prompt.md) + chart prompt
-│   └── skills/         # Write-back skills: publish-analysis, save-correction,
-│                       #   improve-context (/improve-context slash command)
-└── frontend/src/
-    ├── components/Chat/ # MessageList, MessageInput, ContextStatusBar
-    ├── components/Settings/
-    ├── api/             # fetch wrappers for REST + SSE stream reader
-    └── store/           # Zustand: conversations, display, theme
-```
-
-**SSE event flow:**
-```
-User message → POST /api/conversations/{id}/messages
-  → resolver.py resolves credentials → configured engine
-  → LangGraph ReAct agent (DataHub tools + engine tools)
-  → astream_events → TEXT / TOOL_CALL / TOOL_RESULT / SQL / CHART / COMPLETE
-  → Frontend renders each event type inline
-  → Background: context quality scored async, stored on conversation row
-```
-
----
-
-<p align="center">
-  <a href="https://datahub.com">
-    <img src="frontend/public/analytics-agent-logo-white.svg" alt="Powered by DataHub" width="80">
-  </a>
-  <br>
-  <sub>Built with <a href="https://datahub.com">DataHub</a> · <a href="https://langchain.com/langgraph">LangGraph</a> · <a href="https://fastapi.tiangolo.com">FastAPI</a> · <a href="https://react.dev">React</a></sub>
-</p>
+当前发行身份为 `campaign-intelligence`；上游名称只用于许可证归属和代码基线说明，不再作为产品 API、前端包或安装元数据名称。

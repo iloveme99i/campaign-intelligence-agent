@@ -1,0 +1,82 @@
+{
+  "run_at": "2026-09-15T14:39:58.216290+00:00",
+  "case_file": "/Users/belief/Documents/工作/商家活动复盘Agent/app/evals/merchant_review_cases.jsonl",
+  "executed": 1,
+  "passed": 0,
+  "results": [
+    {
+      "id": "byte_full_funnel_sale__continue__goal__full",
+      "passed": false,
+      "assertions": {
+        "first_tool": true,
+        "diagnosis_present": true,
+        "diagnosis_allowed": true,
+        "diagnosis_bounded": true,
+        "answer_topics": true,
+        "causal_limit": true,
+        "quality_status": false
+      },
+      "diagnostic_dimensions": [
+        "variant"
+      ],
+      "quality": {
+        "status": "review_required",
+        "passed": 32,
+        "total": 36,
+        "failed_checks": [
+          "discount_amount_sanity",
+          "money_unit_scale_sanity",
+          "money_values_grounded",
+          "diagnosis_supports_conclusion"
+        ],
+        "groups": [
+          {
+            "key": "scope",
+            "label": "口径完整",
+            "passed": 5,
+            "total": 5
+          },
+          {
+            "key": "evidence",
+            "label": "证据闭环",
+            "passed": 5,
+            "total": 9
+          },
+          {
+            "key": "diagnosis",
+            "label": "诊断克制",
+            "passed": 5,
+            "total": 5
+          },
+          {
+            "key": "decision",
+            "label": "决策边界",
+            "passed": 17,
+            "total": 17
+          }
+        ],
+        "evidence_count": 14,
+        "model_calls": 3,
+        "input_tokens": 55934,
+        "output_tokens": 3605,
+        "total_tokens": 59539,
+        "elapsed_seconds": 17.225,
+        "quality_retry": {
+          "status": "accepted",
+          "attempt": 1,
+          "original_passed": 31,
+          "repaired_passed": 32,
+          "total": 36,
+          "remaining_failed_checks": [
+            "discount_amount_sanity",
+            "money_unit_scale_sanity",
+            "money_values_grounded",
+            "diagnosis_supports_conclusion"
+          ]
+        }
+      },
+      "conversation_id": "899c7cf4-e67b-49da-8599-3f4358822882",
+      "ordinal": 1
+    }
+  ]
+}

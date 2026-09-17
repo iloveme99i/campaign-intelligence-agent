@@ -5,6 +5,7 @@ Download the Fiction Retail SQLite dataset and load it into MySQL.
 Usage (from repo root):
     uv run python scripts/load_sample_data.py [options]
 """
+
 from __future__ import annotations
 
 import argparse
@@ -52,7 +53,10 @@ def _mysql_type(col_name: str, sqlite_type: str) -> str:
         return "TEXT"
     # Heuristic: long-text field names
     lower = col_name.lower()
-    if any(lower.endswith(suffix) for suffix in ("_comment", "_message", "_title", "_desc", "_description")):
+    if any(
+        lower.endswith(suffix)
+        for suffix in ("_comment", "_message", "_title", "_desc", "_description")
+    ):
         return "TEXT"
     return "VARCHAR(255)"
 
@@ -83,7 +87,7 @@ def _build_create_table(table: str, columns: list[tuple]) -> str:
     """
     col_defs: list[str] = []
     pk_cols: list[str] = []
-    for cid, name, col_type, notnull, dflt_value, pk in columns:
+    for _cid, name, col_type, notnull, _dflt_value, pk in columns:
         mysql_t = _mysql_type(name, col_type)
         null_clause = "NOT NULL" if notnull else "NULL"
         col_defs.append(f"  `{name}` {mysql_t} {null_clause}")
@@ -99,15 +103,25 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Load Fiction Retail sample data into MySQL")
     parser.add_argument("--host", default="localhost", help="MySQL host (default: localhost)")
     parser.add_argument("--port", type=int, default=3306, help="MySQL port (default: 3306)")
-    parser.add_argument("--user", default="datahub", help="MySQL user for data loading (default: datahub)")
-    parser.add_argument("--password", default="datahub", help="MySQL password for data loading (default: datahub)")
     parser.add_argument(
-        "--database", default="analytics_agent_demo", help="MySQL database name (default: analytics_agent_demo)"
+        "--user", default="datahub", help="MySQL user for data loading (default: datahub)"
+    )
+    parser.add_argument(
+        "--password", default="datahub", help="MySQL password for data loading (default: datahub)"
+    )
+    parser.add_argument(
+        "--database",
+        default="analytics_agent_demo",
+        help="MySQL database name (default: analytics_agent_demo)",
     )
     # Admin credentials are only used for CREATE DATABASE + GRANT — the regular
     # user (--user) may not have permission to create databases.
-    parser.add_argument("--admin-user", default="root", help="MySQL admin user for CREATE DATABASE (default: root)")
-    parser.add_argument("--admin-password", default="datahub", help="MySQL admin password (default: datahub)")
+    parser.add_argument(
+        "--admin-user", default="root", help="MySQL admin user for CREATE DATABASE (default: root)"
+    )
+    parser.add_argument(
+        "--admin-password", default="datahub", help="MySQL admin password (default: datahub)"
+    )
     args = parser.parse_args()
 
     try:
@@ -132,7 +146,9 @@ def main() -> None:
         db = args.database
 
         # --- 3. Create database + grant access (requires admin/root privileges) ---
-        print(f"[→] Connecting to MySQL at {args.host}:{args.port} as admin ({args.admin_user}) ...")
+        print(
+            f"[→] Connecting to MySQL at {args.host}:{args.port} as admin ({args.admin_user}) ..."
+        )
         admin_conn = pymysql.connect(
             host=args.host,
             port=args.port,
@@ -208,7 +224,9 @@ def main() -> None:
         sqlite_conn.close()
 
         print()
-        print(f"[✓] Done! {total_rows:,} total rows loaded into `{db}` across {len(TABLES)} tables.")
+        print(
+            f"[✓] Done! {total_rows:,} total rows loaded into `{db}` across {len(TABLES)} tables."
+        )
         print(f"    MySQL: {args.host}:{args.port}/{db}")
 
     finally:

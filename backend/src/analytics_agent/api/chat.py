@@ -22,6 +22,7 @@ from analytics_agent.agent.analysis import CONTEXT_TOOLS
 from analytics_agent.db.base import get_session
 from analytics_agent.db.models import Message
 from analytics_agent.db.repository import ConversationRepo, IntegrationRepo, MessageRepo
+from analytics_agent.merchant.scope import ReviewScope, ReviewTask
 
 _tracer = _otrace.get_tracer(__name__)
 
@@ -47,6 +48,11 @@ _QUALITY_MIN_INTERVAL = 30.0
 _quality_throttle: dict[str, float] = {}
 _quality_last_count: dict[str, int] = {}
 _context_call_counts: dict[str, int] = {}
+
+
+def _should_persist_stream_event(event: dict) -> bool:
+    """Persist durable events, not transient token chunks used only for live rendering."""
+    return event.get("event") not in (None, "KEEPALIVE", "TEXT")
 
 
 def _format_error(exc: BaseException) -> str:
@@ -83,6 +89,8 @@ async def _compute_quality_background(conv_id: str, factory) -> None:
 
 class ChatMessageRequest(BaseModel):
     text: str
+    review_scope: ReviewScope | None = None
+    review_task: ReviewTask | None = None
 
 
 async def _persist_message(
@@ -112,6 +120,10 @@ async def _run_and_broadcast(
     user_text: str,
     engine_name: str,
     keepalive_interval: int,
+    review_scope: ReviewScope | None = None,
+    scope_source: str = "explicit",
+    review_task: ReviewTask | None = None,
+    task_source: str = "explicit",
 ) -> None:
     """
     Background task: runs the full agent pipeline independently of the HTTP
@@ -133,7 +145,32 @@ async def _run_and_broadcast(
             sequence = await msg_repo.next_sequence(conversation_id)
 
             await _persist_message(
-                session, conversation_id, "TEXT", "user", {"text": user_text}, sequence
+                session,
+                conversation_id,
+                "TEXT",
+                "user",
+                {
+                    "text": user_text,
+                    **(
+                        {
+                            "review_scope": review_scope.model_dump(mode="json"),
+                            "scope_id": review_scope.scope_id,
+                            "scope_source": scope_source,
+                        }
+                        if review_scope
+                        else {}
+                    ),
+                    **(
+                        {
+                            "review_task": review_task.model_dump(mode="json"),
+                            "task_id": review_task.task_id,
+                            "task_source": task_source,
+                        }
+                        if review_task
+                        else {}
+                    ),
+                },
+                sequence,
             )
             await session.commit()
             sequence += 1
@@ -143,7 +180,7 @@ async def _run_and_broadcast(
                 from analytics_agent.agent.mock_llm import mock_stream_events
 
                 async for evt in mock_stream_events(conversation_id, user_text):
-                    if evt.get("event") not in (None, "KEEPALIVE"):
+                    if _should_persist_stream_event(evt):
                         with contextlib.suppress(Exception):
                             await _persist_message(
                                 session,
@@ -213,6 +250,7 @@ async def _run_and_broadcast(
             from analytics_agent.engines.mcp.engine import MCPQueryEngine
             from analytics_agent.engines.resolver import resolve_engine
 
+            is_merchant_engine = False
             prior_messages = await msg_repo.list_for_conversation(conversation_id)
             history = build_history(
                 prior_messages[:-1],
@@ -245,6 +283,82 @@ async def _run_and_broadcast(
             all_cp_rows = await cp_repo.list_all()
 
             try:
+                from analytics_agent.merchant.engine import (
+                    MerchantQueryEngine,
+                    build_analysis_brief,
+                )
+                from analytics_agent.merchant.runtime import build_merchant_graph
+
+                engine = await resolve_engine(engine_name, session)
+                if isinstance(engine, MerchantQueryEngine):
+                    is_merchant_engine = True
+                    all_cp_rows = []  # Imported merchant snapshots have no external context tools.
+                    if review_scope is not None:
+                        from langchain_core.messages import AIMessage, ToolMessage
+
+                        engine.confirmed_scope = review_scope
+                        call_id = str(uuid.uuid4())
+                        args = {"scope": review_scope.model_dump(mode="json")}
+                        result_text = await engine.comparison_tool().ainvoke(args)
+                        result = orjson.loads(result_text)
+                        if "error" in result:
+                            raise ValueError("已确认口径计算失败：" + result["error"])
+                        events = [
+                            {
+                                "event": "TOOL_CALL",
+                                "payload": {
+                                    "tool_name": "compare_periods",
+                                    "tool_input": args,
+                                    "tool_run_id": call_id,
+                                },
+                            },
+                            {
+                                "event": "SQL",
+                                "payload": {
+                                    **result,
+                                    "tool_name": "compare_periods",
+                                    "tool_run_id": call_id,
+                                    "scope_confirmed": True,
+                                    "scope_source": scope_source,
+                                },
+                            },
+                        ]
+                        for evt in events:
+                            await _persist_message(
+                                session,
+                                conversation_id,
+                                evt["event"],
+                                "assistant",
+                                evt["payload"],
+                                sequence,
+                            )
+                            await session.commit()
+                            sequence += 1
+                            _broadcast(
+                                {
+                                    **evt,
+                                    "conversation_id": conversation_id,
+                                    "message_id": str(uuid.uuid4()),
+                                }
+                            )
+                        model_result_text = orjson.dumps(
+                            build_analysis_brief(result, review_task)
+                        ).decode()
+                        history.extend(
+                            [
+                                AIMessage(
+                                    content="",
+                                    tool_calls=[
+                                        {"id": call_id, "name": "compare_periods", "args": args}
+                                    ],
+                                ),
+                                ToolMessage(
+                                    content=model_result_text,
+                                    name="compare_periods",
+                                    tool_call_id=call_id,
+                                ),
+                            ]
+                        )
                 context_tools: list = []
                 include_mutations = bool(enabled_mutations)
                 for row in all_cp_rows:
@@ -263,20 +377,23 @@ async def _run_and_broadcast(
                     len(context_tools),
                     conversation_id,
                 )
-                engine = await resolve_engine(engine_name, session)
                 engine_tools = None
                 if isinstance(engine, MCPQueryEngine):
                     mcp_tools = await engine.get_tools_async()
                     engine_tools = [t for t in mcp_tools if t.name not in disabled_tools]
 
-                graph = build_graph(
-                    engine=engine if not isinstance(engine, MCPQueryEngine) else None,
-                    engine_name=engine_name,
-                    system_prompt_override=custom_prompt,
-                    disabled_tools=disabled_tools,
-                    enabled_mutations=enabled_mutations,
-                    context_tools=context_tools,
-                    engine_tools=engine_tools,
+                graph = (
+                    build_merchant_graph(engine)
+                    if isinstance(engine, MerchantQueryEngine)
+                    else build_graph(
+                        engine=engine if not isinstance(engine, MCPQueryEngine) else None,
+                        engine_name=engine_name,
+                        system_prompt_override=custom_prompt,
+                        disabled_tools=disabled_tools,
+                        enabled_mutations=enabled_mutations,
+                        context_tools=context_tools,
+                        engine_tools=engine_tools,
+                    )
                 )
             except Exception as exc:
                 for _evt in cast(
@@ -318,7 +435,7 @@ async def _run_and_broadcast(
                 keepalive_interval=keepalive_interval,
                 history=history,
             ):
-                if evt.get("event") not in (None, "KEEPALIVE"):
+                if _should_persist_stream_event(evt):
                     with contextlib.suppress(Exception):
                         await _persist_message(
                             session,
@@ -373,6 +490,112 @@ async def _run_and_broadcast(
                             _span.set_attribute("chart.type", _chart_type)
 
                 _broadcast(evt)
+
+            # Merchant answers get at most two bounded repair passes. Each pass
+            # receives only the persisted evidence packet and cannot query or
+            # change scope. Structural failures (missing diagnosis, truncated
+            # query, mixed scope) are never disguised by rewriting prose.
+            if is_merchant_engine:
+                try:
+                    from analytics_agent.merchant.quality_repair import repair_answer_once
+
+                    stored = await msg_repo.list_for_conversation(conversation_id)
+                    records = [
+                        {
+                            "role": message.role,
+                            "event_type": message.event_type,
+                            "payload": orjson.loads(message.payload),
+                            "created_at": message.created_at,
+                        }
+                        for message in stored
+                    ]
+                    repair = await repair_answer_once(records)
+                    if repair is not None:
+                        for repair_attempt, repair_usage in enumerate(repair.usage_events, start=1):
+                            usage_payload = {
+                                "input_tokens": int(repair_usage.get("input_tokens", 0) or 0),
+                                "output_tokens": int(repair_usage.get("output_tokens", 0) or 0),
+                                "total_tokens": int(repair_usage.get("total_tokens", 0) or 0),
+                                "cache_read_tokens": 0,
+                                "cache_creation_tokens": 0,
+                                "node": f"quality_repair_{repair_attempt}",
+                            }
+                            await _persist_message(
+                                session,
+                                conversation_id,
+                                "USAGE",
+                                "assistant",
+                                usage_payload,
+                                sequence,
+                            )
+                            await session.commit()
+                            sequence += 1
+                            _broadcast(
+                                {
+                                    "event": "USAGE",
+                                    "conversation_id": conversation_id,
+                                    "message_id": str(uuid.uuid4()),
+                                    "payload": usage_payload,
+                                }
+                            )
+                        if repair.accepted:
+                            complete_payload = {
+                                "text": repair.answer,
+                                "quality_retry": True,
+                            }
+                            await _persist_message(
+                                session,
+                                conversation_id,
+                                "COMPLETE",
+                                "assistant",
+                                complete_payload,
+                                sequence,
+                            )
+                            await session.commit()
+                            sequence += 1
+                            _broadcast(
+                                {
+                                    "event": "COMPLETE",
+                                    "conversation_id": conversation_id,
+                                    "message_id": str(uuid.uuid4()),
+                                    "payload": complete_payload,
+                                }
+                            )
+                        retry_payload = {
+                            "status": "accepted" if repair.accepted else "rejected",
+                            "attempt": repair.attempts,
+                            "original_passed": sum(repair.original_score.checks.values()),
+                            "repaired_passed": sum(repair.repaired_score.checks.values()),
+                            "total": len(repair.original_score.checks),
+                            "remaining_failed_checks": [
+                                key
+                                for key, passed in repair.repaired_score.checks.items()
+                                if not passed
+                            ],
+                        }
+                        await _persist_message(
+                            session,
+                            conversation_id,
+                            "QUALITY_RETRY",
+                            "assistant",
+                            retry_payload,
+                            sequence,
+                        )
+                        await session.commit()
+                        sequence += 1
+                        _broadcast(
+                            {
+                                "event": "QUALITY_RETRY",
+                                "conversation_id": conversation_id,
+                                "message_id": str(uuid.uuid4()),
+                                "payload": retry_payload,
+                            }
+                        )
+                except Exception:
+                    # The primary answer remains available, but a failed repair
+                    # must be diagnosable from server logs instead of silently
+                    # disappearing as if the quality loop had not run.
+                    logger.exception("Merchant quality repair failed for %s", conversation_id)
 
             _context_call_counts.pop(conversation_id, None)
             _quality_last_count.pop(conversation_id, None)
@@ -447,6 +670,36 @@ async def send_message(
     if not body.text.strip():
         raise HTTPException(status_code=422, detail="Message text cannot be empty")
 
+    if (
+        body.review_scope is not None or body.review_task is not None
+    ) and not conv.engine_name.startswith("merchant_"):
+        raise HTTPException(status_code=422, detail="复盘任务与口径仅适用于商家数据")
+    effective_scope = body.review_scope
+    scope_source = "explicit"
+    if effective_scope is None and conv.engine_name.startswith("merchant_"):
+        from analytics_agent.merchant.scope import latest_confirmed_scope
+
+        try:
+            effective_scope = latest_confirmed_scope(conv.messages)
+        except ValueError as exc:
+            raise HTTPException(409, "已保存口径无法读取，请重新确认口径") from exc
+        scope_source = "inherited"
+    effective_task = body.review_task
+    task_source = "explicit"
+    if effective_task is None and conv.engine_name.startswith("merchant_"):
+        from analytics_agent.merchant.scope import latest_review_task
+
+        try:
+            effective_task = latest_review_task(conv.messages)
+        except ValueError as exc:
+            raise HTTPException(409, "已保存任务无法读取，请重新定义复盘任务") from exc
+        task_source = "inherited"
+    # No await between checking and registering: one process cannot launch two turns
+    # for the same conversation and interleave persisted sequence numbers.
+    existing = _active_streams.get(conversation_id)
+    if existing is not None and not existing.done:
+        raise HTTPException(status_code=409, detail="本轮分析尚未结束，请等待后再发送")
+
     stream = ConvStream(task=None)
     _active_streams[conversation_id] = stream
     stream.task = asyncio.create_task(
@@ -456,6 +709,10 @@ async def send_message(
             body.text.strip(),
             conv.engine_name,
             settings.sse_keepalive_interval,
+            effective_scope,
+            scope_source,
+            effective_task,
+            task_source,
         )
     )
 

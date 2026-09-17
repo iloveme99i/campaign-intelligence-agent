@@ -46,6 +46,24 @@ export function groupIntoTurns(messages: UIMessage[], globalStreaming: boolean):
   return groups;
 }
 
+export function latestTurnDecision(messages: UIMessage[]): UIMessage | undefined {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message.role === "user" && message.event_type === "TEXT") return undefined;
+    if (message.event_type === "DECISION") return message;
+  }
+  return undefined;
+}
+
+export function latestTurnOutcome(messages: UIMessage[]): UIMessage | undefined {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message.role === "user" && message.event_type === "TEXT") return undefined;
+    if (message.event_type === "OUTCOME") return message;
+  }
+  return undefined;
+}
+
 export function shouldShowSeparator(msgs: UIMessage[], idx: number): boolean {
   if (msgs[idx].event_type !== "TOOL_CALL") return false;
   for (let j = idx - 1; j >= 0; j--) {

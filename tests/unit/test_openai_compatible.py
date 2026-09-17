@@ -193,6 +193,32 @@ def test_build_openai_compatible_no_default_headers_when_empty() -> None:
     assert "default_headers" not in MockChat.call_args.kwargs
 
 
+def test_deepseek_v4_disables_thinking_for_chat_completions_tool_compatibility() -> None:
+    with patch("langchain_openai.ChatOpenAI") as MockChat:
+        MockChat.return_value = MockChat
+        _build_openai_compatible(
+            "deepseek-v4-flash", "https://api.deepseek.com", {}, api_key="secret"
+        )
+
+    assert MockChat.call_args.kwargs["extra_body"] == {"thinking": {"type": "disabled"}}
+
+
+@pytest.mark.parametrize(
+    "model,url",
+    [
+        ("deepseek-v4-flash", "https://gateway.example.com/v1"),
+        ("other-model", "https://api.deepseek.com"),
+        ("deepseek-v4-flash", "https://api.deepseek.com.evil.example/v1"),
+    ],
+)
+def test_deepseek_thinking_override_does_not_leak_to_other_backends(model: str, url: str) -> None:
+    with patch("langchain_openai.ChatOpenAI") as MockChat:
+        MockChat.return_value = MockChat
+        _build_openai_compatible(model, url, {}, api_key="secret")
+
+    assert "extra_body" not in MockChat.call_args.kwargs
+
+
 # ---------------------------------------------------------------------------
 # 1. Factory — ChatOpenAI is constructed with the right kwargs
 # ---------------------------------------------------------------------------

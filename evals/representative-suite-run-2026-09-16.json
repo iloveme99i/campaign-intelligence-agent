@@ -1,0 +1,477 @@
+{
+  "schema_version": 2,
+  "run_at": "2026-09-16T04:53:51.981231+00:00",
+  "case_file": "/Users/belief/Documents/工作/商家活动复盘Agent/app/evals/merchant_review_cases.jsonl",
+  "runtime": {
+    "provider": "openai-compatible",
+    "model": "deepseek-v4-flash",
+    "base_url": "https://api.deepseek.com",
+    "prompt_cache_enabled": true
+  },
+  "coverage": {
+    "manifest": {
+      "cases": 54,
+      "campaigns": {
+        "byte_full_funnel_sale": 18,
+        "tencent_game_return_ops": 18,
+        "tencent_private_retail": 18
+      },
+      "decision_intents": {
+        "adjust": 14,
+        "continue": 14,
+        "scale": 13,
+        "stop": 13
+      },
+      "risk_focus": {
+        "cost": 14,
+        "goal": 13,
+        "path": 14,
+        "variant": 13
+      },
+      "filtered_scopes": {
+        "audience": 2,
+        "channel": 2,
+        "location_id": 1,
+        "variant": 1
+      }
+    },
+    "executed": {
+      "cases": 6,
+      "campaigns": {
+        "byte_full_funnel_sale": 2,
+        "tencent_game_return_ops": 2,
+        "tencent_private_retail": 2
+      },
+      "decision_intents": {
+        "adjust": 1,
+        "continue": 3,
+        "scale": 1,
+        "stop": 1
+      },
+      "risk_focus": {
+        "cost": 2,
+        "goal": 2,
+        "path": 1,
+        "variant": 1
+      },
+      "filtered_scopes": {
+        "audience": 2,
+        "channel": 2,
+        "location_id": 1
+      }
+    }
+  },
+  "executed": 6,
+  "passed": 1,
+  "summary": {
+    "pass_rate": 0.1667,
+    "assertion_failure_counts": {
+      "quality_status": 3,
+      "answer_topics": 2,
+      "diagnosis_allowed": 1
+    },
+    "quality_failure_counts": {
+      "money_unit_scale_sanity": 2,
+      "causal_boundary": 1,
+      "diagnosis_matches_task": 1,
+      "discount_amount_sanity": 1,
+      "money_values_grounded": 1
+    },
+    "repair_attempts": 2,
+    "model_calls": 14,
+    "tokens": {
+      "total": 228281,
+      "mean_per_case": 38046.8,
+      "median_per_case": 34908.5
+    },
+    "latency_seconds": {
+      "mean": 10.502,
+      "p50": 10.063,
+      "p95": 12.958,
+      "max": 13.687
+    }
+  },
+  "results": [
+    {
+      "id": "byte_full_funnel_sale__continue__goal__full",
+      "passed": true,
+      "assertions": {
+        "first_tool": true,
+        "diagnosis_present": true,
+        "diagnosis_allowed": true,
+        "diagnosis_bounded": true,
+        "answer_topics": true,
+        "causal_limit": true,
+        "quality_status": true
+      },
+      "diagnostic_dimensions": [
+        "variant"
+      ],
+      "answer_excerpt": "**总盘结论**\n\n- 主目标（ROI）达成：实际 1.79，目标 1.35，超出 0.44（q_1cd706bc37e34969a94eba279e17c625）。但**目标达成，同时贡献额下降**：活动期贡献额 3,704.00 元，对比期 5,132.00 元，减少 1,428.00 元（q_68bb7f823ef846b6aad6efb201f15f2f）。\n- 同期经营结果：完成订单 92 单（对比期 112 单），净收入 8,224.00 元（对比期 10,396.00 元），商家优惠 1,374.00 元（对比期 0 元），退款 0 元（对比期 20.00 元）（q_68bb7f823ef846b6aad6efb201f15f2f）。贡献额下降与优惠投入、订单量减少同向，但前后对比不能证明活动因果。\n- 活动成本 2,065.00 元，全部为可归属成本，无共享费用未分摊（q_60ce656c542e46d88096d8ead006e6b2）。\n- 关于是否继续：在平衡面板 DiD 下，处理经营单元的活动后周期均值相对活动前周期均值，购买用户平均处理效应 +10.5 人（95% 区间 9.50–11.50，p<0.001），贡献额 +610.00 元（95% 区间 570.03–649.97，p<0.001），净收入 +925.00 元（95% 区间 875.04–974.96，p<0.001）（q_9b3d14818d3243e5928a36b7cf622fe5）。这是条件性识别结果，成立前提为同期对照、构成稳定、前趋势与安慰剂检验未拒绝、无干扰；且仅 3 个活动前周期，前趋势检验力有限，“未拒绝”不等于平行趋势已被证明。因此当前证据支持继续，但属于有条件支持，不是无条件扩大。\n- 实验组复核（q_1693377fc9664c03a05342e50dac3503）：两组购买/曝光率差 0.42 个百分点，95% 区间 -3.31 至 +4.14 个百分点，p=0.83，当前未观察到足以确认的组间差异；该读数为观察性，不能证明方案优劣，也不能据此把预算或流量转给某一组。\n\n**已确认事实**\n\n- 目标：ROI 目标 1.35，实际 1.79，达成（q_1cd706bc37e34969a94eba279e17c625）。\n- 经营结果：活动期贡献额 3,704.00 元、净收入 8,224.00 元、完成订单 92 单；对比期分别为 5,132.00 元、10,396.00 元、112 单（q_68bb7f823ef846b6aad6efb201f15f2f）。\n- 时间走势：对比期每日 16 单、贡献额 731.00–736.00 元；活动期每日 11–15 单、贡献额 380.00–684.00 元，活动期各日贡献额均低于对比期任一日（q_6",
+      "quality": {
+        "status": "passed",
+        "passed": 39,
+        "total": 39,
+        "failed_checks": [],
+        "groups": [
+          {
+            "key": "scope",
+            "label": "口径完整",
+            "passed": 5,
+            "total": 5
+          },
+          {
+            "key": "evidence",
+            "label": "证据闭环",
+            "passed": 9,
+            "total": 9
+          },
+          {
+            "key": "diagnosis",
+            "label": "诊断克制",
+            "passed": 5,
+            "total": 5
+          },
+          {
+            "key": "decision",
+            "label": "决策边界",
+            "passed": 20,
+            "total": 20
+          }
+        ],
+        "evidence_count": 15,
+        "model_calls": 2,
+        "input_tokens": 33198,
+        "output_tokens": 2021,
+        "total_tokens": 35219,
+        "elapsed_seconds": 13.687,
+        "quality_retry": null
+      },
+      "conversation_id": "4eee5c03-57df-409e-91bd-0b0538c90265",
+      "ordinal": 1
+    },
+    {
+      "id": "byte_full_funnel_sale__scale__cost__filtered_channel",
+      "passed": false,
+      "assertions": {
+        "first_tool": true,
+        "diagnosis_present": true,
+        "diagnosis_allowed": true,
+        "diagnosis_bounded": true,
+        "answer_topics": false,
+        "causal_limit": true,
+        "quality_status": false
+      },
+      "diagnostic_dimensions": [
+        "variant",
+        "location_id"
+      ],
+      "answer_excerpt": "**总盘结论**\n\n- 目标未达成：本轮口径下目标为投入产出比 1.35，但共享投放费用尚未完成渠道分摊，实际值无法计算，目标状态为“成本分摊缺失”（q_4d81975f0fca4f628abac96d8ec765db）。\n- 经营结果同期走弱：活动期（6/12–6/18）贡献额 1,332.00 元，对比期（6/5–6/11）1,697.00 元，减少 365.00 元；净收入由 3,436.00 元降至 2,955.00 元，完成订单 37 单降至 33 单（q_0458586c3ba4461eaca3658880385602）。\n- 成本侧：本轮筛选范围内可归属成本为 0 元，另有全活动共享费用 2,065.00 元尚未分摊，因此当前不能计算也不能比较该渠道的投入效率（q_88073a5b10734990bb09fd6af26c8b16）。\n- 对“是否扩大覆盖”的判断：当前证据不支持扩大覆盖。方案维度复核显示两组购买/曝光率差 0.62 个百分点，95% 区间 [-6.04, 7.29] 个百分点，p=0.85，属观察性读数、未验证随机分流，当前未观察到足以确认的组间差异（q_8eafa0e2a6f643d8b23ce89e59591296）；经营点维度复核显示线上旗舰店贡献 720.00 元、区域门店 612.00 元，但成本导出不含经营点字段，无法按点核算投入（q_0c768d84a3974e7d9cfb1c9b24d7ae55）。在共享费用未分摊、且无随机对照的情况下，扩大覆盖缺少可支撑的投入产出依据。\n\n**已确认事实**\n\n- 目标配置：主指标为投入产出比，目标 1.35，归因窗口 3 天；因成本分摊缺失，实际值与差距均无法给出（q_4d81975f0fca4f628abac96d8ec765db）。\n- 经营结果：活动期完成订单 33 单、购买用户 33 人、净收入 2,955.00 元、商家优惠 492.00 元、退款 0 元、贡献额 1,332.00 元；对比期 37 单、37 人、净收入 3,436.00 元、优惠 0 元、退款 5.00 元、贡献额 1,697.00 元（q_0458586c3ba4461eaca3658880385602）。\n- 时间走势：活动期后段走弱，6/15 贡献 108.00 元、6/16 132.00 元，低于对比期单日 225.00–276.00 元的区间；6/18 回升至 240.00 元（q_3cefdb47dc85425a930375b66e1749ef）。\n- 用户路径（活动期，已确认范围去重）：曝光 320 人、进入承接页 261 人、领取权益 180 人、完成关键行动 128 人、购买 33 人，其中完整路径购买 33 人；完成关键行动但未在完整路径下购买 95 人，行动→完整购买转化率 ",
+      "quality": {
+        "status": "review_required",
+        "passed": 37,
+        "total": 39,
+        "failed_checks": [
+          "causal_boundary",
+          "diagnosis_matches_task"
+        ],
+        "groups": [
+          {
+            "key": "scope",
+            "label": "口径完整",
+            "passed": 5,
+            "total": 5
+          },
+          {
+            "key": "evidence",
+            "label": "证据闭环",
+            "passed": 9,
+            "total": 9
+          },
+          {
+            "key": "diagnosis",
+            "label": "诊断克制",
+            "passed": 4,
+            "total": 5
+          },
+          {
+            "key": "decision",
+            "label": "决策边界",
+            "passed": 19,
+            "total": 20
+          }
+        ],
+        "evidence_count": 15,
+        "model_calls": 2,
+        "input_tokens": 32279,
+        "output_tokens": 1935,
+        "total_tokens": 34214,
+        "elapsed_seconds": 10.062,
+        "quality_retry": null
+      },
+      "conversation_id": "a5cd0fea-e50e-4898-a207-08e1154db402",
+      "ordinal": 2
+    },
+    {
+      "id": "tencent_game_return_ops__continue__path__filtered_channel",
+      "passed": false,
+      "assertions": {
+        "first_tool": true,
+        "diagnosis_present": true,
+        "diagnosis_allowed": false,
+        "diagnosis_bounded": true,
+        "answer_topics": true,
+        "causal_limit": true,
+        "quality_status": true
+      },
+      "diagnostic_dimensions": [
+        "variant",
+        "location_id"
+      ],
+      "answer_excerpt": "**总盘结论**\n\n- 目标未达成：活动期转化率 6.39%，低于目标 7.50%，缺口 1.11 个百分点（q_b4b415a34c0d450cb0d2c3a64f50475e）。\n- 同期贡献额下降：活动期 792.00 元，对比期 847.00 元，减少 55.00 元；净收入由 1,171.00 元降至 1,126.00 元，商家优惠由 0 元增至 90.00 元（q_1e8d41f1e6cc4876998d04aa4c6f6ecc）。这是前后同期变化，不能证明活动因果。\n- 最低承接节点在“行动→完整购买”：登录礼包 68 人行动、9 人完整路径购买，承接率 13.2%，未继续 59 人；阶段任务 76 人行动、14 人购买，承接率 18.4%，未继续 62 人（q_b8319686ffc240d98f81d31c0797d987）。未继续者不等于可恢复增量，也不证明原因。\n- 是否继续：当前证据不支持直接扩大，也不支持直接停止。两组购买/曝光差异在观察性读数下未观察到足以确认的组间差异（差值 2.78 个百分点，95% 区间 -2.27 至 7.82 个百分点，p=0.28），不能据此把预算或流量转给某一组（q_903e05081f2c45c1bd1cc50f7df21b83）。建议保留机制、以随机验证方式先解决承接节点问题。\n\n**已确认事实**\n\n- 目标：主指标为转化率，目标 7.50%，实际 6.39%，未达成（q_b4b415a34c0d450cb0d2c3a64f50475e）。\n- 经营结果：活动期 23 单、23 名购买用户、净收入 1,126.00 元、贡献额 792.00 元；对比期 24 单、24 名购买用户、净收入 1,171.00 元、贡献额 847.00 元（q_1e8d41f1e6cc4876998d04aa4c6f6ecc）。\n- 逐日走势：活动期单日贡献额在 64.00–208.00 元之间波动，对比期在 101.50–142.00 元之间；活动期前两日（7/16、7/17）各 72.00 元，低于对比期多数单日（q_f1a937cc1176408d970b7f97ff3a2d91）。\n- 用户路径：曝光 360 人 → 承接页 303 人 → 领取权益 241 人 → 完成关键行动 144 人 → 完整路径购买 23 人；行动后未在完整路径下购买 121 人（q_b8319686ffc240d98f81d31c0797d987）。\n- 活动成本：本轮口径下可归属成本 166,600 分即 1,666.00 元，其中阶段任务 966.00 元、登录礼包 700.00 元（q_7c6ee5723fc94c6e8120093fe60d9631、q_53b2eb53f1b34d3ab386b783165bc537）。该",
+      "quality": {
+        "status": "passed",
+        "passed": 39,
+        "total": 39,
+        "failed_checks": [],
+        "groups": [
+          {
+            "key": "scope",
+            "label": "口径完整",
+            "passed": 5,
+            "total": 5
+          },
+          {
+            "key": "evidence",
+            "label": "证据闭环",
+            "passed": 9,
+            "total": 9
+          },
+          {
+            "key": "diagnosis",
+            "label": "诊断克制",
+            "passed": 5,
+            "total": 5
+          },
+          {
+            "key": "decision",
+            "label": "决策边界",
+            "passed": 20,
+            "total": 20
+          }
+        ],
+        "evidence_count": 15,
+        "model_calls": 2,
+        "input_tokens": 32759,
+        "output_tokens": 1839,
+        "total_tokens": 34598,
+        "elapsed_seconds": 9.689,
+        "quality_retry": null
+      },
+      "conversation_id": "c616bcbd-a121-4bdf-a5d2-79dcd7d10aa1",
+      "ordinal": 3
+    },
+    {
+      "id": "tencent_game_return_ops__stop__variant__filtered_audience",
+      "passed": false,
+      "assertions": {
+        "first_tool": true,
+        "diagnosis_present": true,
+        "diagnosis_allowed": true,
+        "diagnosis_bounded": true,
+        "answer_topics": false,
+        "causal_limit": true,
+        "quality_status": true
+      },
+      "diagnostic_dimensions": [
+        "variant"
+      ],
+      "answer_excerpt": "**总盘结论**\n\n- 目标未达成：活动期转化率 7.04%，低于目标 7.5%，缺口 0.46 个百分点（q_c241bba3edf64002ae37ce7137c06c39）。\n- 活动期相对对比期，贡献额从 1,273.00 元升至 1,336.00 元（+63.00 元），净收入从 1,759.00 元升至 1,905.00 元，完成订单 36→38 单（q_9d0cf6ff03d14b88bd3a7b70ec3747a0）。这是同期前后变化，不能证明活动因果。\n- 关于“是否及时停止投入”：当前证据不支持以方案差异为由停掉某一方案。两个方案的购买/曝光差异为 -3.89 个百分点（阶段任务 8.33% vs 登录礼包 4.44%），95% 区间 [-8.04, +0.26] 个百分点，p=0.096，当前未观察到足以确认的组间差异，且该读数为观察性、未验证随机分流（q_349a107447584a19b95606acdb382861）。\n- 成本口径：共享费用 1,666.00 元尚未分摊，不能作为当前人群范围的渠道成本，也不能计算投入效率（q_45b2378f2f094ac0bd6181b0db03e521）。\n\n**已确认事实**\n\n- 目标：主指标为转化率，目标 7.5%，实际 7.04%，未达成（q_c241bba3edf64002ae37ce7137c06c39）。\n- 经营结果：对比期贡献额 1,273.00 元、净收入 1,759.00 元、退款 5.00 元；活动期贡献额 1,336.00 元、净收入 1,905.00 元、商家优惠 159.00 元、退款 0 元（q_9d0cf6ff03d14b88bd3a7b70ec3747a0）。\n- 时间走势：对比期日贡献额 172.50–213.00 元，活动期 108.00–248.00 元，活动期首尾较高、7 月 20 日最低（q_67f5cebfd31340db89c43e3b997feb01）。\n- 用户路径（活动期，60 日回流人群）：曝光 540 人 → 进入承接页 448 人 → 领取权益 345 人 → 完成关键行动 226 人 → 完整路径购买 38 人；完成关键行动但未在完整路径下购买 188 人，行动→完整购买转化率 16.81%（q_512703aa9e704898a825b9adf9c298ab）。\n- 最低承接节点：阶段任务“行动→完整购买”157→30 人，续转率 19.11%，未续转 127 人；登录礼包 69→8 人，续转率 11.59%，未续转 61 人。该结果只用于排定调查优先级，未续转不等于可恢复增量（q_512703aa9e704898a825b9adf9c298ab）。\n- 方案定向复核：阶段任务曝光 360 人、购买 30 人、贡献额 1,08",
+      "quality": {
+        "status": "passed",
+        "passed": 39,
+        "total": 39,
+        "failed_checks": [],
+        "groups": [
+          {
+            "key": "scope",
+            "label": "口径完整",
+            "passed": 5,
+            "total": 5
+          },
+          {
+            "key": "evidence",
+            "label": "证据闭环",
+            "passed": 9,
+            "total": 9
+          },
+          {
+            "key": "diagnosis",
+            "label": "诊断克制",
+            "passed": 5,
+            "total": 5
+          },
+          {
+            "key": "decision",
+            "label": "决策边界",
+            "passed": 20,
+            "total": 20
+          }
+        ],
+        "evidence_count": 14,
+        "model_calls": 2,
+        "input_tokens": 28530,
+        "output_tokens": 1665,
+        "total_tokens": 30195,
+        "elapsed_seconds": 8.739,
+        "quality_retry": null
+      },
+      "conversation_id": "c130e6b3-e814-42a1-ae3a-37b91d286a06",
+      "ordinal": 4
+    },
+    {
+      "id": "tencent_private_retail__adjust__cost__filtered_location_id",
+      "passed": false,
+      "assertions": {
+        "first_tool": true,
+        "diagnosis_present": true,
+        "diagnosis_allowed": true,
+        "diagnosis_bounded": true,
+        "answer_topics": true,
+        "causal_limit": true,
+        "quality_status": false
+      },
+      "diagnostic_dimensions": [
+        "location_id",
+        "variant"
+      ],
+      "answer_excerpt": "总盘结论\n\n- 目标未达成：活动期净收入 1,109.00 元，目标 6,200.00 元，缺口 5,091.00 元（q_6a5788c320d34c93ae006726d2bdffe5、q_f2337f1a007749d4a5a713d8c89cd81f）。\n- 同期前后变化：贡献额由对比期 1,297.00 元降至活动期 562.00 元，减少 735.00 元；净收入由 2,289.00 元降至 1,109.00 元；完成订单由 31 单降至 17 单（q_f2337f1a007749d4a5a713d8c89cd81f）。这是同期变化，不能证明活动因果。\n- 投入覆盖判断：本轮口径下活动成本无法归属到南区门店，共享费用 1,288.00 元尚未分摊，因此不能计算该范围的投入效率，也不能判断经营结果是否覆盖活动投入（q_4cd2337ff45a49d48d77991783ade4a0）。\n- 任务判断（调整）：当前证据不支持把预算或流量整体转给某一方案。方案间“购买用户/曝光用户”差值为 4.67 个百分点，95% 区间 [-0.54, 9.87] 个百分点，p=0.081，识别检验未通过，当前未观察到足以确认的组间差异，且分流随机性未验证（q_53bfe1f12b774835b74a26e2e77a9c70）。下一轮优先调整对象应放在南区门店的“行动→完整购买”承接环节，而不是直接切换方案（q_5d77e036b7d742b79659b923827f023f）。\n\n已确认事实\n\n- 目标：主指标净收入，活动期实际 1,109.00 元，目标 6,200.00 元，未达成（q_6a5788c320d34c93ae006726d2bdffe5）。\n- 经营结果：对比期 31 单、净收入 2,289.00 元、贡献额 1,297.00 元；活动期 17 单、净收入 1,109.00 元、贡献额 562.00 元；活动期商家优惠 160.00 元，对比期退款 5.00 元（q_f2337f1a007749d4a5a713d8c89cd81f）。\n- 时间走势：对比期每日 4–5 单、贡献额 163.00–210.00 元；活动期每日 1–4 单、贡献额 31.00–131.00 元，活动期各日贡献额均低于对比期最低日（q_a186a1b2832d40d78f06590c8f8889da）。\n- 用户路径（南区门店）：曝光 300 人、进入承接页 232 人、领取权益 141 人、完成关键行动 83 人、路径购买 17 人；行动后未在完整路径下购买 66 人，行动→完整购买承接率 20.48%（q_5d77e036b7d742b79659b923827f023f）。\n- 最低承接节点：内容与券联动 38 人行动→5 人完整购买，承接率 13.16%，未继续 ",
+      "quality": {
+        "status": "review_required",
+        "passed": 38,
+        "total": 39,
+        "failed_checks": [
+          "money_unit_scale_sanity"
+        ],
+        "groups": [
+          {
+            "key": "scope",
+            "label": "口径完整",
+            "passed": 5,
+            "total": 5
+          },
+          {
+            "key": "evidence",
+            "label": "证据闭环",
+            "passed": 8,
+            "total": 9
+          },
+          {
+            "key": "diagnosis",
+            "label": "诊断克制",
+            "passed": 5,
+            "total": 5
+          },
+          {
+            "key": "decision",
+            "label": "决策边界",
+            "passed": 20,
+            "total": 20
+          }
+        ],
+        "evidence_count": 15,
+        "model_calls": 3,
+        "input_tokens": 42982,
+        "output_tokens": 4009,
+        "total_tokens": 46991,
+        "elapsed_seconds": 10.772,
+        "quality_retry": {
+          "status": "rejected",
+          "attempt": 1,
+          "original_passed": 38,
+          "repaired_passed": 38,
+          "total": 39,
+          "remaining_failed_checks": [
+            "money_unit_scale_sanity"
+          ]
+        }
+      },
+      "conversation_id": "49dc12a0-6f1c-4909-a06c-738187ceea1f",
+      "ordinal": 5
+    },
+    {
+      "id": "tencent_private_retail__continue__goal__filtered_audience",
+      "passed": false,
+      "assertions": {
+        "first_tool": true,
+        "diagnosis_present": true,
+        "diagnosis_allowed": true,
+        "diagnosis_bounded": true,
+        "answer_topics": true,
+        "causal_limit": true,
+        "quality_status": false
+      },
+      "diagnostic_dimensions": [
+        "audience",
+        "variant"
+      ],
+      "answer_excerpt": "**总盘结论**\n\n- 主目标未达成：活动期净收入 2,029.00 元，目标 6,200.00 元，缺口 4,171.00 元（q_a7c91865ed994eb3b89bb282ed79b6e9、q_1958bfb7b5644d2386a86632fcd8661f）。\n- 同期经营结果下滑：贡献额由对比期 1,969.00 元降至活动期 1,046.00 元，减少 923.00 元；完成订单 47 单降至 29 单，净收入 3,473.00 元降至 2,029.00 元（q_1958bfb7b5644d2386a86632fcd8661f）。\n- 对“是否继续”的判断：当前证据不支持按现有机制原样继续或扩大。方案维度复核显示，内容与券联动购买/曝光 7.0%、单券承接 5.3%，差值 -1.67 个百分点，95% 区间 [-6.28, 2.94] 个百分点，p=0.50，当前未观察到足以确认的组间差异，且该读数为观察性、未验证随机分流（q_75434e96f80f45329976e9c4dc656513）。\n- 沉默会员人群复核：450 人曝光、335 人进入承接页、195 人领取、127 人完成关键行动、29 人购买，行动→完整购买承接率 22.8%，98 人未在本期完整路径下购买（q_683c658affb94f36bfe50df23a752ec5）。该人群跨渠道归属尚未核对，购买/曝光率暂不能作为决策依据。\n- 前后变化不能证明活动因果；本轮无合格增量估计（incrementality 未识别）。\n\n**已确认事实**\n\n- 目标：主指标为净收入，目标 6,200.00 元，活动期实际 2,029.00 元，未达成（q_a7c91865ed994eb3b89bb282ed79b6e9）。\n- 经营结果：对比期（7/30–8/5）47 单、47 名购买用户、净收入 3,473.00 元、贡献额 1,969.00 元；活动期（8/6–8/12）29 单、29 名购买用户、净收入 2,029.00 元、贡献额 1,046.00 元（q_1958bfb7b5644d2386a86632fcd8661f）。\n- 时间走势：对比期日贡献额 252.00–294.00 元，活动期日贡献额 38.00–276.00 元，8/7 最低 38.00 元，8/11 回升至 276.00 元（q_65f4b424d4044e4b9fe09c3a48eab5a5）。\n- 用户路径：活动期曝光 450 人、进入承接页 335 人、领取权益 195 人、完成关键行动 127 人、购买 29 人；完整路径购买 29 人，行动→完整购买承接率 22.8%，98 人未在本期完整路径下购买（q_49cf18af0d2f47ffb3981f96f9e03bd7）。\n- 最低承接节点：内容",
+      "quality": {
+        "status": "review_required",
+        "passed": 36,
+        "total": 39,
+        "failed_checks": [
+          "discount_amount_sanity",
+          "money_unit_scale_sanity",
+          "money_values_grounded"
+        ],
+        "groups": [
+          {
+            "key": "scope",
+            "label": "口径完整",
+            "passed": 5,
+            "total": 5
+          },
+          {
+            "key": "evidence",
+            "label": "证据闭环",
+            "passed": 6,
+            "total": 9
+          },
+          {
+            "key": "diagnosis",
+            "label": "诊断克制",
+            "passed": 5,
+            "total": 5
+          },
+          {
+            "key": "decision",
+            "label": "决策边界",
+            "passed": 20,
+            "total": 20
+          }
+        ],
+        "evidence_count": 15,
+        "model_calls": 3,
+        "input_tokens": 43198,
+        "output_tokens": 3866,
+        "total_tokens": 47064,
+        "elapsed_seconds": 10.064,
+        "quality_retry": {
+          "status": "rejected",
+          "attempt": 1,
+          "original_passed": 36,
+          "repaired_passed": 36,
+          "total": 39,
+          "remaining_failed_checks": [
+            "discount_amount_sanity",
+            "money_unit_scale_sanity",
+            "money_values_grounded"
+          ]
+        }
+      },
+      "conversation_id": "cc95661d-2944-4352-ae75-d381efad9ea0",
+      "ordinal": 6
+    }
+  ]
+}

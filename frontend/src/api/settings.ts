@@ -424,9 +424,9 @@ export async function testConnectorConfig(
 // --- Version / update check ---
 
 export interface VersionInfo {
+  product: string;
   current_version: string;
-  latest_version: string | null;
-  update_available: boolean;
+  distribution: "local-build";
 }
 
 export async function getVersionInfo(): Promise<VersionInfo> {
@@ -435,25 +435,6 @@ export async function getVersionInfo(): Promise<VersionInfo> {
     if (!res.ok) throw new Error("Failed");
     return res.json();
   } catch {
-    return { current_version: "unknown", latest_version: null, update_available: false };
-  }
-}
-
-export interface Release {
-  tag_name: string;
-  name: string;
-  published_at: string;
-  body: string;
-  html_url: string;
-  prerelease: boolean;
-}
-
-export async function getReleases(): Promise<Release[]> {
-  try {
-    const res = await fetch("/api/releases");
-    if (!res.ok) return [];
-    return res.json();
-  } catch {
-    return [];
+    return { product: "Campaign Intelligence", current_version: "unknown", distribution: "local-build" };
   }
 }

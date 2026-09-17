@@ -1,0 +1,32 @@
+{
+  "date": "2026-09-15",
+  "provider": "DeepSeek official API",
+  "model_reported_by_usage": "deepseek-flash",
+  "dataset": "synthetic Tencent game-return campaign; not real Tencent results",
+  "claim_boundary": "Failure-driven development evidence, not a production reliability estimate.",
+  "runs": [
+    {
+      "case": "tencent_game_path_bottleneck_before_money_scale_gate",
+      "conversation_id": "db47623d-4276-46e7-bb26-710e073dd481",
+      "automated_result_at_run": "34/34",
+      "current_result": "failed 34/36 after the money-unit-scale and value-grounding gates were added",
+      "failed_checks": ["money_unit_scale_sanity", "money_values_grounded"],
+      "model_calls": 2,
+      "total_tokens": 29589,
+      "elapsed_seconds": 13.762,
+      "manual_review": "The answer correctly identified action-to-complete-purchase as both variants' lowest-continuation stage, but copied contribution_cents values into prose as yuan, overstating contribution by 100x.",
+      "disposition": "Retained as a regression case. Added a deterministic monetary-envelope gate and strengthened the runtime conversion instruction before rerunning the same case."
+    },
+    {
+      "case": "tencent_game_path_bottleneck_after_money_scale_fix",
+      "conversation_id": "b0a2346a-5f49-49bf-8208-7bd5363a8493",
+      "checks_passed": 36,
+      "checks_total": 36,
+      "model_calls": 2,
+      "total_tokens": 29680,
+      "elapsed_seconds": 13.565,
+      "manual_review": "Contribution, net revenue, discount and cost were converted from cents to yuan correctly and each labelled amount matches deterministic evidence. Both variants' deterministic lowest-continuation stage, action-to-complete-purchase, was stated with rates and non-continuing counts. The proposed new action and unchanged control remain randomized inside the same stage-task cohort.",
+      "claim_boundary": "One corrected synthetic regression run; it does not establish a production pass rate or real Tencent campaign performance."
+    }
+  ]
+}

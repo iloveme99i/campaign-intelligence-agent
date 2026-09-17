@@ -176,7 +176,7 @@ class UpdatePromptRequest(BaseModel):
 
 
 class DisplaySettings(BaseModel):
-    app_name: str = "Analytics Agent"
+    app_name: str = "Campaign Intelligence"
     logo_url: str = ""
 
 
@@ -2007,8 +2007,13 @@ async def get_llm_settings() -> LlmSettingsResponse:
         # chain (env vars, ~/.aws/credentials, IAM role) at call time.
         has_key = True
     elif provider == "openai-compatible":
-        # Configured when a URL is set; key/headers are optional (some proxies use no auth).
-        has_key = bool(cfg.openai_compatible_base_url)
+        # A URL alone is not a usable hosted-model connection. Local unauthenticated
+        # endpoints remain supported, but the UI only marks a connection ready when
+        # credentials or explicit headers are present.
+        has_key = bool(
+            cfg.openai_compatible_base_url
+            and (cfg.openai_compatible_api_key or cfg.openai_compatible_headers)
+        )
     else:
         has_key = bool(getattr(cfg, key_attr, "")) if key_attr else False
     return LlmSettingsResponse(
@@ -2144,7 +2149,7 @@ async def test_llm_key(body: TestLlmKeyRequest) -> TestLlmKeyResponse:
     )
     try:
         await asyncio.wait_for(asyncio.to_thread(_run), timeout=_VERIFY_TIMEOUT_S)
-        return TestLlmKeyResponse(ok=True, message="Key verified")
+        return TestLlmKeyResponse(ok=True, message="连接验证通过")
     except TimeoutError:
         return TestLlmKeyResponse(ok=False, message=_VERIFY_TIMEOUT_MSG)
     except Exception as exc:
@@ -2303,9 +2308,15 @@ async def get_display(session: AsyncSession = Depends(get_session)) -> DisplaySe
     if raw:
         try:
             data = orjson.loads(raw)
-            return DisplaySettings(
-                app_name=data.get("app_name", "Analytics Agent"), logo_url=data.get("logo_url", "")
-            )
+            app_name = data.get("app_name", "Campaign Intelligence")
+            if app_name in {
+                "复盘 Agent",
+                "商家营销活动复盘 Agent",
+                "Campaign Ledger",
+                "Campaign Analyst",
+            }:
+                app_name = "Campaign Intelligence"
+            return DisplaySettings(app_name=app_name, logo_url=data.get("logo_url", ""))
         except Exception:
             pass
     return DisplaySettings()

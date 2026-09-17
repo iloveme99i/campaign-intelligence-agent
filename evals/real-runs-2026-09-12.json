@@ -1,0 +1,44 @@
+{
+  "date": "2026-09-12",
+  "provider": "DeepSeek official API",
+  "configured_model": "deepseek-v4-flash",
+  "mode": "non-thinking tool mode",
+  "dataset": "synthetic cross-industry campaign example",
+  "summary": {
+    "runs": 2,
+    "passed": 1,
+    "failed": 1,
+    "claim_boundary": "Development evidence only. This is not a stable pass-rate estimate."
+  },
+  "runs": [
+    {
+      "case": "scope_revision_channel_slice",
+      "conversation_id": "73124a25-1763-4959-9464-f41e828d95a8",
+      "prompt_revision": 9,
+      "checks_passed": 25,
+      "checks_total": 25,
+      "elapsed_seconds": 9.788,
+      "input_tokens": 18131,
+      "output_tokens": 1571,
+      "total_tokens": 19702,
+      "diagnostic_dimension": "variant",
+      "manual_review": "failed",
+      "failure": "A channel-scoped answer described campaign-wide shared cost as if it were attributable to the WeChat Game channel. The then-current automated gates did not detect this semantic attribution error.",
+      "disposition": "Cost queries now preserve channel provenance; channel slices expose a shared_costs_unallocated boundary, suppress channel efficiency, and require an explicit attribution statement in the trace evaluator."
+    },
+    {
+      "case": "scope_revision_with_cost_attribution_boundary",
+      "conversation_id": "73124a25-1763-4959-9464-f41e828d95a8",
+      "prompt_revision": 10,
+      "checks_passed": 26,
+      "checks_total": 26,
+      "elapsed_seconds": 18.942,
+      "input_tokens": 25324,
+      "output_tokens": 1859,
+      "total_tokens": 27183,
+      "diagnostic_dimension": "variant",
+      "scenario": "腾讯游戏 · 回流任务季，从全渠道修订为微信游戏渠道（公开机制原型，数据完全合成）",
+      "result": "Passed all gates. The answer invalidated the prior all-channel conclusion, recalculated the selected channel, distinguished shared campaign cost from attributable channel cost, suppressed unsupported channel efficiency, and retained measurable continuation and stop conditions."
+    }
+  ]
+}

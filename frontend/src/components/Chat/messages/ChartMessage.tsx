@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { Download } from "lucide-react";
-import vegaEmbed from "vega-embed";
 import type { ChartPayload } from "@/types";
 
 interface Props {
@@ -38,12 +37,15 @@ export function ChartMessage({ payload, onRenderError }: Props) {
         autosize: { type: "fit-x", contains: "padding" },
       } as never;
 
-      vegaEmbed(container, spec, {
-        mode: "vega-lite",
-        renderer: "svg",
-        actions: { export: true, editor: false, source: false },
-        tooltip: { theme: "custom" },
-      })
+      import("vega-embed")
+        .then(({ default: vegaEmbed }) =>
+          vegaEmbed(container, spec, {
+            mode: "vega-lite",
+            renderer: "svg",
+            actions: { export: true, editor: false, source: false },
+            tooltip: { theme: "custom" },
+          }),
+        )
         .then((result) => {
           viewRef.current = result.view;
           setReady(true);
@@ -77,6 +79,9 @@ export function ChartMessage({ payload, onRenderError }: Props) {
       viewRef.current?.finalize();
       viewRef.current = null;
     };
+    // onRenderError is a notification sink, not chart identity. Re-embedding on
+    // every parent render would discard the live Vega view.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [payload.vega_lite_spec]);
 
   const handleDownloadPng = async () => {
@@ -96,7 +101,10 @@ export function ChartMessage({ payload, onRenderError }: Props) {
     }
   };
 
-  if (!payload.vega_lite_spec || Object.keys(payload.vega_lite_spec).length === 0) {
+  if (
+    !payload.vega_lite_spec ||
+    Object.keys(payload.vega_lite_spec).length === 0
+  ) {
     return null;
   }
 

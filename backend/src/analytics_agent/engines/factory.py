@@ -197,6 +197,11 @@ def _engine_cls(engine_type: str):
     from analytics_agent.engines.mcp.engine import MCPQueryEngine
     from analytics_agent.engines.sqlalchemy.engine import SQLAlchemyQueryEngine
 
+    if engine_type == "merchant_snapshot":
+        from analytics_agent.merchant.storage import create_snapshot_engine
+
+        return create_snapshot_engine
+
     if engine_type in _CONNECTOR_MAP:
         spec = _CONNECTOR_MAP[engine_type]
 

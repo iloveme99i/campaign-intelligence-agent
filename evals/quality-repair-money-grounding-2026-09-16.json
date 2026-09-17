@@ -1,0 +1,44 @@
+{
+  "run_type": "real_model_failure_replay",
+  "executed_at": "2026-09-16T13:22:00+09:00",
+  "model": "deepseek-flash",
+  "provenance": "synthetic",
+  "source_conversation_id": "8c51eca0-4134-4d06-bd5c-c2b7667787bd",
+  "original": {
+    "status": "review_required",
+    "passed": 37,
+    "total": 38,
+    "failed_checks": ["money_values_grounded"],
+    "detected_errors": [
+      {
+        "metric": "contribution_cents",
+        "stated_yuan": 3393.0,
+        "evidence_yuan": {"baseline": 3933.0, "activity": 2191.0}
+      },
+      {
+        "metric": "contribution_cents",
+        "stated_yuan": 1202.0,
+        "evidence_yuan": {"activity_minus_baseline": -1742.0}
+      },
+      {
+        "metric": "activity_cost_cents",
+        "stated_yuan": 903.0,
+        "evidence_yuan": {"components": [784.0, 504.0], "total": 1288.0},
+        "semantic_issue": "903 is contribution minus attributable cost, not the cost itself."
+      }
+    ]
+  },
+  "repair": {
+    "mode": "one_shot_evidence_bound_replay",
+    "tool_calls_allowed": false,
+    "accepted": true,
+    "passed": 38,
+    "total": 38,
+    "failed_checks": [],
+    "input_tokens": 13021,
+    "output_tokens": 1827,
+    "total_tokens": 14848,
+    "persisted_to_source_conversation": false
+  },
+  "claims_boundary": "The replay validates one deterministic failure and one real-model repair. It is not a repair pass-rate estimate; the original failed record remains unchanged."
+}

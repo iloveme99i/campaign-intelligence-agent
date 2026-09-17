@@ -21,6 +21,9 @@ data/
 node_modules/
 frontend/dist/
 frontend/.vite/
+frontend/*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
 backend/src/analytics_agent/static/
 
 # IDE
@@ -45,3 +48,10 @@ tests/e2e/*.local.config.ts
 
 # Git credentials (written by DataHub agent tooling for auth; never commit)
 .git-credentials
+
+# Private interview drafts and local design-agent state
+docs/interview/
+.hallmark/
+.impeccable/
+.merchant-runtime/
+!docs/demo/*.png

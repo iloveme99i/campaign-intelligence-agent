@@ -20,10 +20,12 @@ services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/Dockerfile
     ports:
       - "8100:8100"
-    env_file: .env
+    env_file:
+      - path: .env
+        required: false
     environment:
       DATABASE_URL: postgresql+asyncpg://talk_to_data:talk_to_data@postgres:5432/talk_to_data
     depends_on:

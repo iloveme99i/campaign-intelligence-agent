@@ -33,9 +33,14 @@ export function AgentWorkBlock({
   const tsElapsed = useMemo(() => {
     if (workMessages.length === 0) return 0;
     const t0 = workMessages.find((m) => m.created_at)?.created_at;
-    const tN = [...workMessages].reverse().find((m) => m.created_at)?.created_at;
+    const tN = [...workMessages]
+      .reverse()
+      .find((m) => m.created_at)?.created_at;
     if (!t0 || !tN) return 0;
-    return Math.max(1, Math.round((new Date(tN).getTime() - new Date(t0).getTime()) / 1000));
+    return Math.max(
+      1,
+      Math.round((new Date(tN).getTime() - new Date(t0).getTime()) / 1000),
+    );
   }, [workMessages]);
 
   // Derive turn-level token totals from per-message usage when the prop is absent.
@@ -45,14 +50,25 @@ export function AgentWorkBlock({
     if (turnUsage) return turnUsage;
     const usages = workMessages.map((m) => m.usage).filter(Boolean);
     if (usages.length === 0) return undefined;
-    return usages.reduce<TurnUsage>((acc, u) => ({
-      input_tokens: acc.input_tokens + (u!.input_tokens || 0),
-      output_tokens: acc.output_tokens + (u!.output_tokens || 0),
-      total_tokens: acc.total_tokens + (u!.total_tokens || 0),
-      cache_read_tokens: acc.cache_read_tokens + (u!.cache_read_tokens || 0),
-      cache_creation_tokens: acc.cache_creation_tokens + (u!.cache_creation_tokens || 0),
-      calls: acc.calls + 1,
-    }), { input_tokens: 0, output_tokens: 0, total_tokens: 0, cache_read_tokens: 0, cache_creation_tokens: 0, calls: 0 });
+    return usages.reduce<TurnUsage>(
+      (acc, u) => ({
+        input_tokens: acc.input_tokens + (u!.input_tokens || 0),
+        output_tokens: acc.output_tokens + (u!.output_tokens || 0),
+        total_tokens: acc.total_tokens + (u!.total_tokens || 0),
+        cache_read_tokens: acc.cache_read_tokens + (u!.cache_read_tokens || 0),
+        cache_creation_tokens:
+          acc.cache_creation_tokens + (u!.cache_creation_tokens || 0),
+        calls: acc.calls + 1,
+      }),
+      {
+        input_tokens: 0,
+        output_tokens: 0,
+        total_tokens: 0,
+        cache_read_tokens: 0,
+        cache_creation_tokens: 0,
+        calls: 0,
+      },
+    );
   }, [turnUsage, workMessages]);
 
   // Live timer while streaming
@@ -62,7 +78,9 @@ export function AgentWorkBlock({
       // Without this guard, history-loaded turns (never streamed) set
       // frozenElapsed to ~0 and the ?? fallback to tsElapsed is skipped.
       if (frozenElapsed.current === null && liveElapsed > 0) {
-        frozenElapsed.current = Math.round((Date.now() - startRef.current) / 1000);
+        frozenElapsed.current = Math.round(
+          (Date.now() - startRef.current) / 1000,
+        );
       }
       return;
     }
@@ -71,6 +89,9 @@ export function AgentWorkBlock({
       setLiveElapsed(Math.round((Date.now() - startRef.current) / 1000));
     }, 1000);
     return () => clearInterval(iv);
+    // liveElapsed is intentionally read only when streaming stops; including it
+    // would restart the timer every second and corrupt the elapsed duration.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isStreaming]);
 
   // Expand while streaming, auto-collapse 600ms after done
@@ -94,14 +115,18 @@ export function AgentWorkBlock({
     ? liveElapsed
     : (frozenElapsed.current ?? (liveElapsed > 0 ? liveElapsed : tsElapsed));
 
-  const toolCallCount = workMessages.filter((m) => m.event_type === "TOOL_CALL").length;
+  const toolCallCount = workMessages.filter(
+    (m) => m.event_type === "TOOL_CALL",
+  ).length;
 
   return (
     <div className="w-full my-1.5" data-print-hide>
       {/* Header bar */}
       <button
         aria-expanded={expanded}
-        onClick={() => { if (!isStreaming) setExpanded((v) => !v); }}
+        onClick={() => {
+          if (!isStreaming) setExpanded((v) => !v);
+        }}
         className={`w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors
           border border-border/70
           ${expanded ? "rounded-t-lg rounded-b-none" : "rounded-lg hover:bg-muted/30"}
@@ -109,21 +134,27 @@ export function AgentWorkBlock({
       >
         <Settings2
           className={`w-3.5 h-3.5 flex-shrink-0 transition-colors ${
-            isStreaming ? "text-primary animate-spin" : "text-muted-foreground/60"
+            isStreaming
+              ? "text-primary animate-spin"
+              : "text-muted-foreground/60"
           }`}
           style={isStreaming ? { animationDuration: "3s" } : undefined}
         />
 
-        <span className={`text-xs flex-1 font-medium ${isStreaming ? "text-foreground" : "text-muted-foreground"}`}>
+        <span
+          className={`text-xs flex-1 font-medium ${isStreaming ? "text-foreground" : "text-muted-foreground"}`}
+        >
           {isStreaming ? (
             <span>
-              Working
-              {liveElapsed > 0 && <span className="opacity-70"> · {liveElapsed}s</span>}
+              正在核对证据
+              {liveElapsed > 0 && (
+                <span className="opacity-70"> · {liveElapsed}s</span>
+              )}
               <span className="inline-flex gap-0.5 ml-1.5">
                 {[0, 1, 2].map((i) => (
                   <span
                     key={i}
-                    className="w-1 h-1 rounded-full bg-primary/60 animate-bounce"
+                    className="h-1 w-1 rounded-full bg-primary/60 animate-pulse"
                     style={{ animationDelay: `${i * 0.15}s` }}
                   />
                 ))}
@@ -131,9 +162,11 @@ export function AgentWorkBlock({
             </span>
           ) : (
             <span>
-              Worked for {elapsedSeconds > 0 ? `${elapsedSeconds}s` : "—"}
+              证据追踪 {elapsedSeconds > 0 ? `· ${elapsedSeconds} 秒` : ""}
               {toolCallCount > 0 && (
-                <span className="opacity-50 ml-1.5">· {toolCallCount} tool call{toolCallCount !== 1 ? "s" : ""}</span>
+                <span className="ml-1.5 opacity-50">
+                  · {toolCallCount} 次工具调用
+                </span>
               )}
             </span>
           )}
@@ -145,7 +178,11 @@ export function AgentWorkBlock({
 
         {!isStreaming && (
           <span className="text-muted-foreground/40 flex-shrink-0">
-            {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+            {expanded ? (
+              <ChevronDown className="w-3.5 h-3.5" />
+            ) : (
+              <ChevronRight className="w-3.5 h-3.5" />
+            )}
           </span>
         )}
       </button>
@@ -159,9 +196,15 @@ export function AgentWorkBlock({
           {workMessages.map((msg) => {
             return (
               <div key={msg.id}>
-                {msg.event_type === "TEXT" && msg.isThinking && showReasoning && (
-                  <ThinkingMessage payload={msg.payload as never} isStreaming={false} usage={msg.usage} />
-                )}
+                {msg.event_type === "TEXT" &&
+                  msg.isThinking &&
+                  showReasoning && (
+                    <ThinkingMessage
+                      payload={msg.payload as never}
+                      isStreaming={false}
+                      usage={msg.usage}
+                    />
+                  )}
                 {msg.event_type === "THINKING" && (
                   <ThinkingMessage payload={msg.payload as never} />
                 )}
@@ -175,7 +218,10 @@ export function AgentWorkBlock({
                   <SqlMessage payload={msg.payload as never} />
                 )}
                 {msg.event_type === "CHART" && (
-                  <ChartMessage payload={msg.payload as never} onRenderError={onChartError} />
+                  <ChartMessage
+                    payload={msg.payload as never}
+                    onRenderError={onChartError}
+                  />
                 )}
                 {msg.event_type === "ERROR" && (
                   <ErrorMessage payload={msg.payload as never} />

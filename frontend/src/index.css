@@ -2,6 +2,42 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  overflow-x: clip;
+}
+body {
+  min-width: 320px;
+  overflow-x: clip;
+  font-family: "Manrope Variable", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  font-synthesis: none;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+::selection {
+  background: hsl(var(--primary) / 0.18);
+}
+:focus-visible {
+  outline-color: hsl(var(--primary));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* ─── Theme tokens ──────────────────────────────────────────────────────────── */
 :root,
 [data-theme="datahub"] {
@@ -71,68 +107,264 @@
 /* ─── Onboarding full-page layout ──────────────────────────────────────────── */
 
 @keyframes ob-name-fade {
-  0%   { opacity: 0; transform: translateY(6px); }
-  20%  { opacity: 1; transform: translateY(0);   }
-  80%  { opacity: 1; transform: translateY(0);   }
-  100% { opacity: 0; transform: translateY(-6px);}
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
 }
 
 /* Left panel: primary-tinted dot grid over a subtle gradient */
 .onboarding-left {
   background:
     radial-gradient(circle, hsl(var(--primary) / 0.13) 1px, transparent 1px),
-    linear-gradient(160deg, hsl(var(--primary) / 0.07) 0%, hsl(var(--background)) 75%);
-  background-size: 22px 22px, 100% 100%;
+    linear-gradient(
+      160deg,
+      hsl(var(--primary) / 0.07) 0%,
+      hsl(var(--background)) 75%
+    );
+  background-size:
+    22px 22px,
+    100% 100%;
 }
 
 /* Step content slide-in animations (direction toggled via class) */
 @keyframes ob-slide-in-fwd {
-  from { opacity: 0; transform: translateX(28px); }
-  to   { opacity: 1; transform: translateX(0);    }
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 @keyframes ob-slide-in-back {
-  from { opacity: 0; transform: translateX(-28px); }
-  to   { opacity: 1; transform: translateX(0);     }
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
-.ob-enter-fwd  { animation: ob-slide-in-fwd  0.22s cubic-bezier(0.16, 1, 0.3, 1) both; }
-.ob-enter-back { animation: ob-slide-in-back 0.22s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.ob-enter-fwd {
+  animation: ob-slide-in-fwd 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.ob-enter-back {
+  animation: ob-slide-in-back 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
 
 /* ─── Scrollbar polish ──────────────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.5); }
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
 
 .vega-embed,
-.vega-embed * { z-index: 0 !important; }
+.vega-embed * {
+  z-index: 0 !important;
+}
+
+/* ─── Merchant review workspace ───────────────────────────────────────────── */
+.merchant-review-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 420px);
+}
+
+.merchant-pane-switch {
+  display: none;
+}
+
+.merchant-evidence-pane {
+  background: hsl(var(--background));
+  scrollbar-gutter: stable;
+}
+
+.merchant-decision-pane {
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid hsl(var(--border));
+}
+
+/* Selection continuity: changing campaigns replaces one dossier sheet with the next. */
+@keyframes campaign-detail-enter {
+  from {
+    opacity: 0.65;
+    clip-path: inset(0 0 0 1.25rem);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0);
+  }
+}
+
+.campaign-detail-enter {
+  animation: campaign-detail-enter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes import-panel-enter {
+  from {
+    opacity: 0;
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0);
+  }
+}
+
+.import-panel {
+  animation: import-panel-enter 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: top;
+}
+
+.agent-decision-copy > :first-child {
+  margin-top: 0;
+}
+.agent-decision-copy > :last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 960px) {
+  .merchant-review-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  .merchant-pane-switch {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.25rem;
+  }
+
+  .merchant-pane-switch button {
+    min-width: 0;
+    border-radius: 0.5rem;
+    padding: 0.55rem 0.75rem;
+    color: hsl(var(--muted-foreground));
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+
+  .merchant-pane-switch button:hover {
+    background: hsl(var(--muted));
+  }
+  .merchant-pane-switch button.is-active {
+    background: hsl(var(--secondary));
+    color: hsl(var(--secondary-foreground));
+  }
+
+  .merchant-evidence-pane,
+  .merchant-decision-pane {
+    display: none;
+  }
+
+  .merchant-evidence-pane.is-mobile-active {
+    display: block;
+  }
+  .merchant-decision-pane {
+    border-left: 0;
+  }
+  .merchant-decision-pane.is-mobile-active {
+    display: flex;
+  }
+}
+
+@media (max-width: 639px) {
+  .metric-cell:nth-child(even) {
+    padding-left: 1rem;
+    border-left: 1px solid hsl(var(--border));
+  }
+}
 
 /* ─── Print styles ──────────────────────────────────────────────────────────── */
-@page { margin: 1.5cm 2cm; }
+@page {
+  margin: 1.5cm 2cm;
+}
 
 @media print {
   /* Force backgrounds/colors to render (Chrome strips them by default) */
-  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
 
   /* ── Reset ──────────────────────────────────────────────── */
-  html, body {
+  html,
+  body {
     height: auto !important;
     overflow: visible !important;
     background: white !important;
     color: #111 !important;
     font-size: 11pt !important;
     line-height: 1.6 !important;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+    font-family:
+      -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
   }
 
   /* ── Hide chrome ─────────────────────────────────────────── */
-  aside,
+  [data-print-navigation],
   [data-print-hide],
   [class*="fixed"],
-  [class*="z-50"] { display: none !important; }
+  [class*="z-50"] {
+    display: none !important;
+  }
 
   /* ── Break out of flex/height constraints ────────────────── */
   body > #root,
-  body > #root > div { display: block !important; height: auto !important; overflow: visible !important; }
+  body > #root > div {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .merchant-review-grid {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .merchant-evidence-pane,
+  .merchant-decision-pane {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .merchant-decision-pane {
+    border-left: 0 !important;
+    page-break-before: always;
+  }
+
+  /* Closed evidence disclosures remain compact on screen but print in full. */
+  details:not([open]) > :not(summary) {
+    display: block !important;
+  }
 
   /* ── Main content ────────────────────────────────────────── */
   main {
@@ -159,8 +391,17 @@
     padding: 8px 24px 14px !important;
     margin-bottom: 20px;
   }
-  #print-header h1 { font-size: 16pt !important; font-weight: 700 !important; color: #111 !important; margin: 0 0 4px !important; }
-  #print-header p  { font-size: 9pt  !important; color: #6b7280 !important; margin: 0 !important; }
+  #print-header h1 {
+    font-size: 16pt !important;
+    font-weight: 700 !important;
+    color: #111 !important;
+    margin: 0 0 4px !important;
+  }
+  #print-header p {
+    font-size: 9pt !important;
+    color: #6b7280 !important;
+    margin: 0 !important;
+  }
 
   /* ── Message list ────────────────────────────────────────── */
   #chat-messages {
@@ -185,7 +426,9 @@
   }
 
   /* Keep SQL query + result table together; text messages can flow naturally */
-  [data-print-sql] { page-break-inside: avoid; }
+  [data-print-sql] {
+    page-break-inside: avoid;
+  }
 
   /* Override any Tailwind max-w-[N%] arbitrary classes on message bubbles */
   #chat-messages [class*="max-w-["] {
@@ -195,7 +438,10 @@
 
   /* Prose text */
   #chat-messages p,
-  #chat-messages li { font-size: 10.5pt !important; color: #111 !important; }
+  #chat-messages li {
+    font-size: 10.5pt !important;
+    color: #111 !important;
+  }
 
   /* User message rows — make children span full width (data-print-role set in MessageList.tsx) */
   #chat-messages > [data-print-role="user"] > * {
@@ -209,12 +455,13 @@
   [data-print-user] {
     background: #ede9fe !important;
     color: #111 !important;
-    border-left: 4px solid #7c3aed !important;
+    border-left: 0 !important;
     border-radius: 6px !important;
     padding: 8px 12px !important;
     font-size: 11pt !important;
     font-weight: 600 !important;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+    font-family:
+      -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
   }
 
   /* Code / SQL blocks — scope to pre/code only, not prose p.font-mono */
@@ -235,7 +482,8 @@
 
   /* Thinking block content: render as readable prose, not code */
   [data-print-expand] p {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+    font-family:
+      -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
     font-size: 9pt !important;
     color: #6b7280 !important;
     background: transparent !important;
@@ -251,7 +499,8 @@
     font-size: 9pt !important;
     margin: 6pt 0 !important;
   }
-  #chat-messages th, #chat-messages td {
+  #chat-messages th,
+  #chat-messages td {
     border: 1px solid #d1d5db !important;
     padding: 3px 8px !important;
     text-align: left !important;
@@ -259,7 +508,10 @@
     word-break: break-word !important;
     white-space: normal !important;
   }
-  #chat-messages th { background: #f3f4f6 !important; font-weight: 600 !important; }
+  #chat-messages th {
+    background: #f3f4f6 !important;
+    font-weight: 600 !important;
+  }
 
   /* Thinking / tool blocks */
   [data-print-expand] {
@@ -271,12 +523,23 @@
   }
 
   /* Charts — keep intrinsic Vega height, full width; hide options button */
-  .vega-embed, .vega-embed * { overflow: visible !important; max-height: none !important; }
-  .vega-embed svg { width: 100% !important; }
-  .vega-embed summary, .vega-embed details { display: none !important; }
+  .vega-embed,
+  .vega-embed * {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+  .vega-embed svg {
+    width: 100% !important;
+  }
+  .vega-embed summary,
+  .vega-embed details {
+    display: none !important;
+  }
 
   /* Hide interactive controls inside messages */
   #chat-messages button,
   #chat-messages input,
-  #chat-messages select { display: none !important; }
+  #chat-messages select {
+    display: none !important;
+  }
 }

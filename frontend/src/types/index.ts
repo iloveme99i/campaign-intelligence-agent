@@ -7,6 +7,9 @@ export type SSEEventType =
   | "CHART"
   | "USAGE"
   | "COMPLETE"
+  | "DECISION"
+  | "OUTCOME"
+  | "QUALITY_RETRY"
   | "ERROR";
 
 export interface SSEEvent {

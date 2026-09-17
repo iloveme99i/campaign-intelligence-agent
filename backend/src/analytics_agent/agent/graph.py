@@ -44,12 +44,15 @@ def build_graph(
     enabled_mutations: set[str] | None = None,
     context_tools: list | None = None,  # pre-built from DB context platforms at request time
     engine_tools: list | None = None,  # pre-built for MCP data sources (bypasses QueryEngine)
+    skill_tools_override: list | None = None,
+    automatic_charts: bool = True,
+    model=None,  # optional dependency injection; defaults preserve existing behavior
 ):
     from analytics_agent.agent.chart_generator import chart_node
     from analytics_agent.engines.factory import get_registry
 
     disabled = disabled_tools or set()
-    llm = get_llm(streaming=True)
+    llm = model if model is not None else get_llm(streaming=True)
 
     from analytics_agent.agent.chart_tool import create_chart
 
@@ -65,7 +68,12 @@ def build_graph(
     # Always-on skills (context search etc.) + opt-in write-back skills
     from analytics_agent.skills.loader import build_always_on_skill_tools, build_skill_tools
 
-    skill_tools = build_always_on_skill_tools() + build_skill_tools(enabled_mutations or set())
+    skill_tools = (
+        skill_tools_override
+        if skill_tools_override is not None
+        else build_always_on_skill_tools() + build_skill_tools(enabled_mutations or set())
+    )
+    skill_tools = [t for t in skill_tools if t.name not in disabled]
 
     # Engine tools — MCP data sources supply pre-built tools; native engines use QueryEngine
     if engine_tools is not None:
@@ -88,8 +96,9 @@ def build_graph(
         )
 
         system_prompt = system_prompt_override.format(engine_name=engine_name)
-        system_prompt += get_search_business_context_section()
-        system_prompt += get_improve_context_prompt_section()
+        if skill_tools_override is None:
+            system_prompt += get_search_business_context_section()
+            system_prompt += get_improve_context_prompt_section()
         if enabled_mutations:
             system_prompt += get_skill_system_prompt_section(enabled_mutations)
     else:
@@ -138,11 +147,14 @@ def build_graph(
     graph.add_node("agent", react_agent)
     graph.add_node("chart", chart_node)
     graph.add_edge(START, "agent")
-    graph.add_conditional_edges(
-        "agent",
-        _route_after_agent,
-        {"chart": "chart", "__end__": END},
-    )
+    if automatic_charts:
+        graph.add_conditional_edges(
+            "agent",
+            _route_after_agent,
+            {"chart": "chart", "__end__": END},
+        )
+    else:
+        graph.add_edge("agent", END)
     graph.add_edge("chart", END)
 
     return graph.compile()

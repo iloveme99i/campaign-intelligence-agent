@@ -4,7 +4,7 @@ OTEL tracing setup.
 Supported env vars (all standard OTEL):
   OTEL_EXPORTER_OTLP_ENDPOINT   e.g. http://localhost:4317 or https://api.honeycomb.io
   OTEL_EXPORTER_OTLP_HEADERS    e.g. x-honeycomb-team=abc123
-  OTEL_SERVICE_NAME              default: datahub-analytics-agent
+  OTEL_SERVICE_NAME              default: campaign-intelligence
   OTEL_TRACES_EXPORTER           default: otlp (set to "none" to disable)
 
 A TracerProvider is always created so that the MixpanelSpanProcessor (telemetry)
@@ -36,7 +36,7 @@ def setup_tracing(app=None) -> None:
 
         from analytics_agent.telemetry import mixpanel_processor
 
-        service_name = os.environ.get("OTEL_SERVICE_NAME", "datahub-analytics-agent")
+        service_name = os.environ.get("OTEL_SERVICE_NAME", "campaign-intelligence")
         provider = TracerProvider(resource=Resource.create({"service.name": service_name}))
 
         if otel_active:

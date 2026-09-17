@@ -81,6 +81,8 @@ interface Props {
   onClose: () => void;
   /** When true the About nav item shows an update-available badge. */
   updateAvailable?: boolean;
+  /** Hide upstream analytics configuration in the merchant review product. */
+  merchantMode?: boolean;
 }
 
 // --- Status badge ---
@@ -1212,7 +1214,7 @@ function DisplaySection() {
             type="text"
             value={appName}
             onChange={(e) => setAppName(e.target.value)}
-            placeholder="Analytics Agent"
+            placeholder="Campaign Intelligence"
             className="w-full text-sm bg-background border border-border rounded px-3 py-2
                        focus:outline-none focus:ring-1 focus:ring-primary/50"
           />
@@ -1257,7 +1259,7 @@ function DisplaySection() {
                 </svg>
               )}
               <span className="text-base font-semibold tracking-tight" style={{ letterSpacing: "-0.02em" }}>
-                {appName || "Analytics Agent"}
+                {appName || "Campaign Intelligence"}
               </span>
             </div>
           </div>
@@ -1338,8 +1340,8 @@ const SECTION_DESCRIPTIONS: Record<Section, string> = {
 
 // --- Main modal ---
 
-export function SettingsModal({ onClose, updateAvailable }: Props) {
-  const [section, setSection] = useState<Section>(updateAvailable ? "about" : "connections");
+export function SettingsModal({ onClose, updateAvailable, merchantMode = false }: Props) {
+  const [section, setSection] = useState<Section>(merchantMode ? "model" : updateAvailable ? "about" : "connections");
 
   return (
     <div className="fixed inset-0 z-50 bg-background flex flex-col">
@@ -1347,7 +1349,7 @@ export function SettingsModal({ onClose, updateAvailable }: Props) {
       <div className="flex items-center justify-between px-5 py-3 border-b border-border flex-shrink-0">
         <div className="flex items-center gap-2">
           <Settings2 className="w-4 h-4 text-muted-foreground" />
-          <h1 className="text-sm font-semibold">Settings</h1>
+          <h1 className="text-sm font-semibold">{merchantMode ? "模型与设置" : "Settings"}</h1>
         </div>
         <button
           onClick={onClose}
@@ -1362,58 +1364,58 @@ export function SettingsModal({ onClose, updateAvailable }: Props) {
         {/* Left nav */}
         <nav className="w-52 flex-shrink-0 border-r border-border flex flex-col">
           <div className="p-3 space-y-0.5 flex-1">
-            <NavItem
+            {!merchantMode && <NavItem
               label="About"
               icon={<Info className="w-4 h-4" />}
               active={section === "about"}
               onClick={() => setSection("about")}
               badge={updateAvailable}
-            />
-            <NavItem
+            />}
+            {!merchantMode && <NavItem
               label="Connections"
               icon={<Link2 className="w-4 h-4" />}
               active={section === "connections"}
               onClick={() => setSection("connections")}
-            />
+            />}
             <NavItem
-              label="Model"
+              label={merchantMode ? "DeepSeek 模型" : "Model"}
               icon={<Cpu className="w-4 h-4" />}
               active={section === "model"}
               onClick={() => setSection("model")}
             />
-            <NavItem
+            {!merchantMode && <NavItem
               label="Prompt"
               icon={<FileText className="w-4 h-4" />}
               active={section === "prompt"}
               onClick={() => setSection("prompt")}
-            />
+            />}
             <NavItem
-              label="Display Settings"
+              label={merchantMode ? "显示设置" : "Display Settings"}
               icon={<Monitor className="w-4 h-4" />}
               active={section === "display"}
               onClick={() => setSection("display")}
             />
           </div>
-          <div className="px-3 py-3 border-t border-border flex items-center justify-between">
+          {!merchantMode && <div className="px-3 py-3 border-t border-border flex items-center justify-between">
             <DataHubBadge />
             <ThemeSwitcher />
-          </div>
+          </div>}
         </nav>
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 max-w-3xl w-full mx-auto">
           {/* Section header */}
           <div className="mb-6">
-            <h2 className="text-base font-semibold">{SECTION_LABELS[section]}</h2>
-            <p className="text-xs text-muted-foreground mt-1">{SECTION_DESCRIPTIONS[section]}</p>
+            <h2 className="text-base font-semibold">{merchantMode && section === "model" ? "DeepSeek 模型" : merchantMode && section === "display" ? "显示设置" : SECTION_LABELS[section]}</h2>
+            <p className="text-xs text-muted-foreground mt-1">{merchantMode && section === "model" ? "配置分析 Agent 使用的模型与 API Key；密钥仅加密保存在本机。" : merchantMode && section === "display" ? "调整 Agent 名称与标识。" : SECTION_DESCRIPTIONS[section]}</p>
           </div>
 
           {/* Keep ModelSection always mounted so its state survives tab switches */}
-          <div className={section !== "connections" ? "hidden" : ""}><ConnectionsSection /></div>
-          <div className={section !== "model"       ? "hidden" : ""}><ModelSection /></div>
-          <div className={section !== "prompt"      ? "hidden" : ""}><PromptSection /></div>
+          {!merchantMode && <div className={section !== "connections" ? "hidden" : ""}><ConnectionsSection /></div>}
+          <div className={section !== "model" ? "hidden" : ""}><ModelSection merchantMode={merchantMode} /></div>
+          {!merchantMode && <div className={section !== "prompt" ? "hidden" : ""}><PromptSection /></div>}
           <div className={section !== "display"     ? "hidden" : ""}><DisplaySection /></div>
-          {section === "about" && <AboutSection />}
+          {!merchantMode && section === "about" && <AboutSection />}
         </div>
       </div>
     </div>

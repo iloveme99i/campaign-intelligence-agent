@@ -40,6 +40,16 @@ async def resolve_engine(engine_name: str, session: AsyncSession) -> Any:
         raise ValueError(f"Engine '{engine_name}' not found. Available: {list(registry.keys())}")
     base_engine = registry[engine_name]
 
+    from analytics_agent.merchant.engine import MerchantQueryEngine
+
+    if isinstance(base_engine, MerchantQueryEngine):
+        # Query budget and evidence belong to a turn, never the global registry.
+        return MerchantQueryEngine(
+            base_engine.reader.path,
+            max_queries=base_engine.max_queries,
+            synthetic=base_engine.synthetic,
+        )
+
     # Load credential from DB
     cred = await CredentialRepo(session).get(engine_name)
     if not cred:

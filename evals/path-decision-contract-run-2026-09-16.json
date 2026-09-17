@@ -1,0 +1,158 @@
+{
+  "schema_version": 2,
+  "run_at": "2026-09-16T09:08:58.610502+00:00",
+  "case_file": "/Users/belief/Documents/工作/商家活动复盘Agent/app/evals/merchant_review_cases.jsonl",
+  "runtime": {
+    "provider": "openai-compatible",
+    "model": "deepseek-v4-flash",
+    "base_url": "https://api.deepseek.com",
+    "prompt_cache_enabled": true
+  },
+  "coverage": {
+    "manifest": {
+      "cases": 54,
+      "campaigns": {
+        "byte_full_funnel_sale": 18,
+        "tencent_game_return_ops": 18,
+        "tencent_private_retail": 18
+      },
+      "decision_intents": {
+        "adjust": 14,
+        "continue": 14,
+        "scale": 13,
+        "stop": 13
+      },
+      "risk_focus": {
+        "cost": 14,
+        "goal": 13,
+        "path": 14,
+        "variant": 13
+      },
+      "filtered_scopes": {
+        "audience": 2,
+        "channel": 2,
+        "location_id": 1,
+        "variant": 1
+      }
+    },
+    "executed": {
+      "cases": 1,
+      "campaigns": {
+        "tencent_game_return_ops": 1
+      },
+      "decision_intents": {
+        "continue": 1
+      },
+      "risk_focus": {
+        "path": 1
+      },
+      "filtered_scopes": {
+        "channel": 1
+      }
+    }
+  },
+  "executed": 1,
+  "passed": 0,
+  "summary": {
+    "pass_rate": 0.0,
+    "assertion_failure_counts": {
+      "quality_status": 1
+    },
+    "quality_failure_counts": {
+      "cost_attribution_boundary": 1,
+      "path_bottleneck_grounded": 1
+    },
+    "repair_attempts": 1,
+    "model_calls": 4,
+    "tokens": {
+      "total": 61279,
+      "mean_per_case": 61279,
+      "median_per_case": 61279
+    },
+    "latency_seconds": {
+      "mean": 11.264,
+      "p50": 11.264,
+      "p95": 11.264,
+      "max": 11.264
+    }
+  },
+  "results": [
+    {
+      "id": "tencent_game_return_ops__continue__path__filtered_channel",
+      "passed": false,
+      "assertions": {
+        "first_tool": true,
+        "diagnosis_present": true,
+        "diagnosis_allowed": true,
+        "diagnosis_bounded": true,
+        "answer_topics": true,
+        "causal_limit": true,
+        "quality_status": false
+      },
+      "diagnostic_dimensions": [
+        "variant",
+        "location_id"
+      ],
+      "answer": "## 总盘结论\n\n- 目标未达成：活动期转化率 6.39%，低于目标 7.50%，缺口 1.11 个百分点（q_ac181c1a6be549209b1ac40e65700c6e）。\n- 活动期贡献额 792.00 元，对比期 847.00 元，同期下降 55.00 元；净收入 1,126.00 元 vs 1,171.00 元，完成订单 23 单 vs 24 单（q_3a160adb66624da4a2397ce57e478a37）。前后变化不能证明活动因果。\n- 用户路径最低承接节点为“行动→完整购买”：登录礼包 68 人行动、9 人完整路径购买，承接率 13.24%，未继续 59 人；阶段任务 76 人行动、14 人购买，承接率 18.42%，未继续 62 人（q_d21bd3849fa04960910b19f0f9583ec9）。\n- 对“是否继续”的判断：当前证据不支持按现有机制原样扩大投入，也不支持直接停掉；建议保留机制、把下一轮预算集中到“行动→完整购买”这一节点做随机验证（q_238c451991694885b33e0b3cab786eb9）。\n- 成本口径：当前范围可归属成本 0.00 元，全活动共享费用 1,666.00 元尚未分摊，因此无法判断经营结果能否覆盖活动投入，也不做渠道投入效率比较（q_d266d088c7144b349be8109b2e5540c2）。\n\n## 已确认事实\n\n- 目标：主指标转化率目标 7.50%，实际 6.39%，未达成（q_ac181c1a6be549209b1ac40e65700c6e）。\n- 经营结果：活动期贡献额 792.00 元、净收入 1,126.00 元、商家优惠 90.00 元、退款 0.00 元；对比期贡献额 847.00 元、净收入 1,171.00 元、优惠 0.00 元、退款 5.00 元（q_3a160adb66624da4a2397ce57e478a37）。\n- 时间走势：活动期单日贡献额在 64.00–208.00 元之间波动，对比期在 101.50–142.00 元之间，活动期波动更大且未呈持续抬升（q_de1d288e9fe3437a82af9072116d5c76）。\n- 用户路径（本轮口径，微信游戏渠道）：曝光 360 人、进入承接页 303 人、领取权益/接受任务 241 人、完成关键行动 144 人、完整路径购买 23 人；完成关键行动但未在完整路径下购买 121 人，行动→完整购买承接率 15.97%（q_d21bd3849fa04960910b19f0f9583ec9）。\n- 实验组最低承接节点：登录礼包 13.24%（68→9，未继续 59 人）、阶段任务 18.42%（76→14，未继续 62 人），两组节点相同（q_d21bd3849fa04960910b19f0f9583ec9）。\n- 实验组复核：两组“购买用户/曝光用户”分别为 5.00% 与 7.78%，差值 2.78 个百分点，95% 区间 −2.27 至 7.82 个百分点，p=0.2812；当前未观察到足以确认的组间差异，且分流未经随机验证（q_238c451991694885b33e0b3cab786eb9）。\n- 经营点复核：server_east 转化率 12.50%、server_south 4.17%、server_west 2.50%；行动→完整购买承接率分别为 27.27%、10.00%、7.69%，差异集中在后段承接（q_04d81816100e44bf8fb3c7e30973e081）。\n- 人群扫描：returning_30d 转化率 5.00%、returning_60d 7.78%，与实验组读数一致（q_02fb54c1ce4341ed98bf5535865d4823）。\n- 数据质量：购买用户中无先前曝光缺失、无维度标签不匹配（q_79afc75f5cfd42e49917ad0f01bbdde4）。\n- 数据覆盖：两期各 7 天均有订单，活动期 7 天均有曝光，最后观察到的活动期订单日为 2026-07-22（q_0024c5a678444c19b7349bb7f23cb398）。\n- 归因尾窗：配置 7 天，当前尾窗订单 0 单、候选 0 单，不能据此判断尾效已结算（q_a0d84c7f56fa46c2a04a3e055be69ed6）。\n- 活动成本：当前范围可归属成本 0.00 元，全活动共享费用 1,666.00 元尚未分摊（q_d266d088c7144b349be8109b2e5540c2）。\n\n## 解释假设\n\n1. 假设“行动→完整购买”承接偏低与任务完成后的购买引导或结算路径有关，而非用户意愿不足；本轮数据只能定位节点，不能证明原因。\n2. 假设 server_west、server_south 的低转化主要来自后段承接差异（7.69%、10.00% vs 27.27%），而非曝光或领取环节；需在点内验证。\n3. 假设阶段任务组读数略高与任务结构有关，但组间差异未通过识别检验，也可能是分流构成或样本量所致。\n\n## 待验证项\n\n- 微信游戏入口存在一日登录埋点延迟，活动期最后一日及尾窗的曝光、行动与购买可能被低估，需与埋点导出范围核对后再定论。\n- 分流是否随机、是否有分配日志与同期对照均未验证，当前组间读数只能作为观察性参照。\n- 共享费用 1,666.00 元的分摊规则缺失，无法计算投入效率或判断盈亏平衡。\n- 归因尾窗尚未结束/订单导出可能不完整，尾效未结算。\n- 经营点维度无成本字段，不能按点拆分投入。\n\n## 下一轮行动\n\n- 改变对象：在“完成关键行动”用户中随机分出“新增购买承接动作”和“保持原动作”两组，随机化单元为用户，分流资格在干预前固定；不把 server_east 等经营点当作对照组。\n- 验证指标：完整路径购买用户/已完成关键行动用户（行动→完整购买承接率），仅此一个主指标。\n- 护栏指标：曝光→进入承接页、领取→完成关键行动的承接率，以及退款金额与商家优惠金额，避免前段被挤压。\n- 停止或继续条件：若随机验证中承接率提升且置信区间不跨 0、前段与退款护栏未恶化，则继续并考虑扩量；若区间跨 0 或护栏恶化，则回到现有机制并优先排查埋点延迟与结算路径，不扩大投入。",
+      "answer_excerpt": "## 总盘结论\n\n- 目标未达成：活动期转化率 6.39%，低于目标 7.50%，缺口 1.11 个百分点（q_ac181c1a6be549209b1ac40e65700c6e）。\n- 活动期贡献额 792.00 元，对比期 847.00 元，同期下降 55.00 元；净收入 1,126.00 元 vs 1,171.00 元，完成订单 23 单 vs 24 单（q_3a160adb66624da4a2397ce57e478a37）。前后变化不能证明活动因果。\n- 用户路径最低承接节点为“行动→完整购买”：登录礼包 68 人行动、9 人完整路径购买，承接率 13.24%，未继续 59 人；阶段任务 76 人行动、14 人购买，承接率 18.42%，未继续 62 人（q_d21bd3849fa04960910b19f0f9583ec9）。\n- 对“是否继续”的判断：当前证据不支持按现有机制原样扩大投入，也不支持直接停掉；建议保留机制、把下一轮预算集中到“行动→完整购买”这一节点做随机验证（q_238c451991694885b33e0b3cab786eb9）。\n- 成本口径：当前范围可归属成本 0.00 元，全活动共享费用 1,666.00 元尚未分摊，因此无法判断经营结果能否覆盖活动投入，也不做渠道投入效率比较（q_d266d088c7144b349be8109b2e5540c2）。\n\n## 已确认事实\n\n- 目标：主指标转化率目标 7.50%，实际 6.39%，未达成（q_ac181c1a6be549209b1ac40e65700c6e）。\n- 经营结果：活动期贡献额 792.00 元、净收入 1,126.00 元、商家优惠 90.00 元、退款 0.00 元；对比期贡献额 847.00 元、净收入 1,171.00 元、优惠 0.00 元、退款 5.00 元（q_3a160adb66624da4a2397ce57e478a37）。\n- 时间走势：活动期单日贡献额在 64.00–208.00 元之间波动，对比期在 101.50–142.00 元之间，活动期波动更大且未呈持续抬升（q_de1d288e9fe3437a82af9072116d5c76）。\n- 用户路径（本轮口径，微信游戏渠道）：曝光 360 人、进入承接页 303 人、领取权益/接受任务 241 人、完成关键行动 144 人、完整路径购买 23 人；完成关键行动但未在完整路径下购买 121 人，行动→完整购买承接率 15.97%（q_d21bd3849fa04960910b19f0f9583ec9）。\n- 实验组最低承接节点：登录礼包 13.24%（68→9，未继续 59 人）、阶段任务 18.42%（76→14，未继续 62 人），两组节点相同（q_d21bd3849fa04960910b19",
+      "failure_details": {
+        "money_grounding_issues": []
+      },
+      "quality": {
+        "status": "review_required",
+        "passed": 39,
+        "total": 41,
+        "failed_checks": [
+          "cost_attribution_boundary",
+          "path_bottleneck_grounded"
+        ],
+        "groups": [
+          {
+            "key": "scope",
+            "label": "口径完整",
+            "passed": 5,
+            "total": 5
+          },
+          {
+            "key": "evidence",
+            "label": "证据闭环",
+            "passed": 9,
+            "total": 9
+          },
+          {
+            "key": "diagnosis",
+            "label": "诊断克制",
+            "passed": 5,
+            "total": 5
+          },
+          {
+            "key": "decision",
+            "label": "决策边界",
+            "passed": 20,
+            "total": 22
+          }
+        ],
+        "evidence_count": 15,
+        "model_calls": 4,
+        "input_tokens": 55921,
+        "output_tokens": 5358,
+        "total_tokens": 61279,
+        "elapsed_seconds": 11.264,
+        "quality_retry": {
+          "status": "rejected",
+          "attempt": 2,
+          "original_passed": 39,
+          "repaired_passed": 38,
+          "total": 41,
+          "remaining_failed_checks": [
+            "action_contract",
+            "single_executable_primary_metric",
+            "path_bottleneck_grounded"
+          ]
+        }
+      },
+      "conversation_id": "a2679744-b9aa-4fe5-9dd0-50617310cf22",
+      "ordinal": 1
+    }
+  ]
+}
