@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 280" role="img" aria-labelledby="title desc">
+  <title id="title">Campaign Intelligence — Campaign Review Agent</title>
+  <desc id="desc">Campaign review connects metric calculation, targeted diagnosis and query evidence.</desc>
+  <!-- Hallmark · pre-emit critique: P4 H4 E4 S4 R5 V4 · README-native cover -->
+  <style>
+    :root { --paper: #142522; --ink: #edf4f0; --muted: #a8bcb3; --rule: #39534a; --accent: #b9d5c5; --display: 'Helvetica Neue', Helvetica, Arial, sans-serif; --mono: 'SFMono-Regular', Consolas, monospace; }
+    .paper { fill: var(--paper); } .ink { fill: var(--ink); } .muted { fill: var(--muted); }
+    .rule { stroke: var(--rule); stroke-width: 1; fill: none; } .accent { fill: var(--accent); }
+    .display { font-family: var(--display); font-weight: 500; } .mono { font-family: var(--mono); }
+  </style>
+  <rect width="1200" height="280" rx="8" class="paper"/>
+  <text x="48" y="84" font-size="18" class="mono muted">Campaign Review Agent</text>
+  <text x="44" y="148" font-size="54" letter-spacing="-2" class="display ink">Campaign Intelligence</text>
+  <text x="48" y="204" font-size="18" class="display muted">Metrics, diagnosis and evidence in one review.</text>
+  <path d="M760 48V232" class="rule"/>
+  <text x="808" y="82" font-size="21" class="display ink">Metric calculation</text>
+  <path d="M808 102H1152" class="rule"/>
+  <text x="808" y="146" font-size="21" class="display ink">Targeted diagnosis</text>
+  <path d="M808 166H1152" class="rule"/>
+  <text x="808" y="210" font-size="21" class="display accent">Query evidence</text>
+</svg>
